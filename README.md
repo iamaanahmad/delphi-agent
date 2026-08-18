@@ -130,6 +130,16 @@ npm run agent -- config/resolution-rules.json
 
 That command fetches the declared primary source, evaluates freshness, joins the open market, requests quotes, and prints a dry-run decision. It submits only when both live switches in `.env` are set to `true`.
 
+For continuous monitoring, run the watcher. It reloads the rule file, open markets, and evidence every 60 seconds by default:
+
+```bash
+npm run watch -- config/resolution-rules.json
+# Faster local verification:
+npm run watch -- config/resolution-rules.json --interval-ms 5000
+```
+
+`SETTLEMENT_EDGE_POLL_INTERVAL_MS` can also set the polling interval. Transient failures use exponential retry backoff, `SIGINT` and `SIGTERM` stop cleanly, and unchanged evidence plus market state cannot produce the same order twice. Dry-run remains the default; live orders still require both `ALLOW_LIVE_TRADING=true` and `SETTLEMENT_EDGE_EXECUTE=true`.
+
 See [demo-script.md](docs/demo-script.md) for the 90-second judge walkthrough.
 
 ## Demo instructions
@@ -148,6 +158,7 @@ Run `npm run demo`. The fixture reproduces a market at 61% after Wikimedia has a
 - [x] Quote-aware sizing for shallow liquidity
 - [x] Explicit two-switch live-order gate
 - [x] Deterministic credential-free replay
+- [x] Continuous 60-second watcher with retry, shutdown, and duplicate-order protection
 - [x] Stale-data, disagreement, low-edge, and quote-failure stops
 - [x] Hash-linked decision receipts
 - [x] Type checking, unit tests, and GitHub Actions
