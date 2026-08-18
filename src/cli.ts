@@ -162,21 +162,31 @@ async function watch(ruleFile: string, args: string[]) {
   }
 }
 
-const [command = "help", ...commandArgs] = process.argv.slice(2);
-const argument = commandArgs[0]?.startsWith("--") ? undefined : commandArgs[0];
-const args = argument ? commandArgs.slice(1) : commandArgs;
-if (command === "replay") {
-  await replay(argument ?? "fixtures/wikipedia-threshold.json");
-} else if (command === "scan") {
-  if (liveTradingEnabled()) console.log("Live switches are enabled, but scan is read-only by design.");
-  await scan();
-} else if (command === "run") {
-  await run(argument ?? "config/resolution-rules.json");
-} else if (command === "watch") {
-  await watch(argument ?? "config/resolution-rules.json", args);
-} else if (command === "reconcile") {
-  if (!argument) throw new Error("reconcile requires a market address");
-  await reconcile(argument, args);
-} else {
-  console.log("Settlement Edge\n\n  npm run demo                                      Deterministic proof with no credentials\n  npm run scan                                      Read live competition markets without trading\n  npm run agent -- <rules>                          Evaluate declared sources once; dry-run by default\n  npm run watch -- <rules> --interval-ms N          Poll declared sources continuously; defaults to 60000ms\n  npm run reconcile -- <market> [--ledger <path>]  Append read-only settlement and wallet reconciliation");
+async function main() {
+  const [command = "help", ...commandArgs] = process.argv.slice(2);
+  const argument = commandArgs[0]?.startsWith("--") ? undefined : commandArgs[0];
+  const args = argument ? commandArgs.slice(1) : commandArgs;
+  if (command === "replay") {
+    await replay(argument ?? "fixtures/wikipedia-threshold.json");
+  } else if (command === "scan") {
+    if (liveTradingEnabled()) console.log("Live switches are enabled, but scan is read-only by design.");
+    await scan();
+  } else if (command === "run") {
+    await run(argument ?? "config/resolution-rules.json");
+  } else if (command === "watch") {
+    await watch(argument ?? "config/resolution-rules.json", args);
+  } else if (command === "reconcile") {
+    if (!argument) throw new Error("reconcile requires a market address");
+    await reconcile(argument, args);
+  } else {
+    console.log("Settlement Edge\n\n  npm run demo                                      Deterministic proof with no credentials\n  npm run scan                                      Read live competition markets without trading\n  npm run agent -- <rules>                          Evaluate declared sources once; dry-run by default\n  npm run watch -- <rules> --interval-ms N          Poll declared sources continuously; defaults to 60000ms\n  npm run reconcile -- <market> [--ledger <path>]  Append read-only settlement and wallet reconciliation");
+  }
+}
+
+try {
+  await main();
+} catch (error) {
+  const detail = error instanceof Error ? error.message : String(error);
+  console.error(`Settlement Edge stopped: ${detail}`);
+  process.exitCode = 1;
 }
