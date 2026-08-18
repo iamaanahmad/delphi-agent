@@ -75,7 +75,8 @@ The agent also enforces:
 - maximum TST spend, bankroll percentage, price impact, and slippage;
 - tiny candidate sizes for shallow competition markets;
 - no secret logging and no committed credentials;
-- hash-linked JSONL receipts for every buy and skip decision.
+- hash-linked JSONL ledger records for decisions, source failures, ambiguous orders, and read-only settlement reconciliation;
+- restart-safe opportunity state that blocks unchanged and ambiguous order replays across process restarts.
 
 This is competition testnet software using play-money TST, not financial advice or a mainnet trading system.
 
@@ -85,7 +86,9 @@ This is competition testnet software using play-money TST, not financial advice 
 - Conservative probability estimates that penalize stale or conflicting evidence.
 - Quote-aware size search designed for shallow competition LMSR curves.
 - Two-switch execution authorization and dry-run defaults.
-- Hash-linked receipts for both trades and refusals.
+- Hash-linked lifecycle records for trades, refusals, failures, wallet changes, settlement, redemption, and realized P&L.
+- Persistent duplicate and ambiguous-order protection across watcher restarts.
+- Read-only reconciliation that reports unsupported or unavailable SDK fields explicitly.
 - Deterministic replay with no API, wallet, gas, or network dependency.
 
 ## Setup instructions
@@ -150,6 +153,16 @@ npm run watch -- config/resolution-rules.json --interval-ms 5000
 
 `SETTLEMENT_EDGE_POLL_INTERVAL_MS` can also set the polling interval. Transient failures use exponential retry backoff, `SIGINT` and `SIGTERM` stop cleanly, and unchanged evidence plus market state cannot produce the same order twice. Dry-run remains the default; live orders still require both `ALLOW_LIVE_TRADING=true` and `SETTLEMENT_EDGE_EXECUTE=true`.
 
+Watcher state is stored atomically in `artifacts/watcher-state.json`. Successful opportunities retain their transaction hash, while an order whose response was lost is persisted as ambiguous and blocked after restart.
+
+After a trade settles, append a read-only wallet and market reconciliation:
+
+```bash
+npm run reconcile -- 0xMARKET_ADDRESS
+```
+
+The command reads the signer balance, on-chain market status, indexed winner, and wallet positions through the official SDK. It computes realized P&L only when the ledger contains observed before-and-after trade balances and the SDK reports a completed redemption. Missing history and unsupported fields are recorded as unavailable rather than replaced with estimates. The command never redeems, liquidates, approves, or trades.
+
 See [demo-script.md](docs/demo-script.md) for the 90-second judge walkthrough.
 
 ## Demo instructions
@@ -172,6 +185,8 @@ Run `npm run demo`. The fixture reproduces a market at 61% after Wikimedia has a
 - [x] Three reviewed live-market mappings with offline source fixtures
 - [x] Stale-data, disagreement, low-edge, and quote-failure stops
 - [x] Hash-linked decision receipts
+- [x] Restart-safe duplicate and ambiguous-order state
+- [x] Read-only settlement, redemption, wallet, and realized-P&L reconciliation
 - [x] Type checking, unit tests, and GitHub Actions
 - [ ] Register the trading wallet on DoraHacks
 - [ ] Add the testnet Delphi API key and signer only to local `.env`
@@ -190,7 +205,7 @@ Shallow liquidity can make even modest orders move the curve or revert. Rather t
 
 1. Register the exact signer wallet and verify leaderboard inclusion with a tiny trade.
 2. Expand reviewed rule coverage as new objective JSON-backed markets open.
-3. Add portfolio-aware exits, settlement redemption, failed-market liquidation, and P&L reconciliation.
+3. Add explicitly authorized redemption and failed-market liquidation after the first read-only reconciliation is observed.
 4. Confirm and encode the organizer's unpublished trade and market activity thresholds.
 
 ## Impact
@@ -208,7 +223,8 @@ src/evidence.ts   Primary-source extraction, freshness, threshold rules
 src/strategy.ts   Conservative probability and quote-aware sizing
 src/engine.ts     Decision pipeline and safety stops
 src/gateway.ts    Official Delphi SDK and deterministic replay gateways
-src/receipt.ts    Hash-linked audit receipts
+src/receipt.ts    Backward-compatible hash-linked lifecycle ledger
+src/reconciliation.ts Read-only settlement and realized-P&L reconciliation
 fixtures/         Credential-free judge replay
 tests/            Risk, evidence, strategy, and engine checks
 docs/             Architecture, demo, and submission plan

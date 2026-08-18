@@ -1,5 +1,13 @@
 import { DelphiClient } from "@gensyn-ai/gensyn-delphi-sdk";
-import type { MarketView, Quote, TradePlan, TradingGateway } from "./types.js";
+import type {
+  MarketSettlementSnapshot,
+  MarketView,
+  PositionSnapshot,
+  Quote,
+  TradePlan,
+  TradingGateway,
+  WalletBalanceSnapshot,
+} from "./types.js";
 
 const sharesToBigint = (shares: number) => BigInt(Math.round(shares * 1e18));
 
@@ -51,6 +59,44 @@ export class DelphiGateway implements TradingGateway {
       sharesOut: sharesToBigint(plan.shares),
       maxTokensIn: plan.maxTokensIn,
     });
+  }
+
+  async getWalletSnapshot(): Promise<WalletBalanceSnapshot> {
+    const signer = await this.client.getSigner();
+    const [ethWei, collateral] = await Promise.all([
+      this.client.getEthBalance(),
+      this.client.getErc20BalanceWithDecimals(),
+    ]);
+    return {
+      address: signer.address,
+      ethWei: ethWei.toString(),
+      collateralAtomic: collateral.balance.toString(),
+      collateralDecimals: collateral.decimals,
+    };
+  }
+
+  async getMarketSettlement(marketId: string): Promise<MarketSettlementSnapshot> {
+    const [status, market] = await Promise.all([
+      this.client.getMarketStatus(marketId as `0x${string}`),
+      this.client.getMarket({ id: marketId }),
+    ]);
+    const parsedWinner = market.winningOutcomeIdx === null ? null : Number(market.winningOutcomeIdx);
+    return {
+      status,
+      winningOutcomeIdx: parsedWinner !== null && Number.isInteger(parsedWinner) ? parsedWinner : null,
+    };
+  }
+
+  async listWalletPositions(marketId: string, walletAddress: string): Promise<PositionSnapshot[]> {
+    const { positions } = await this.client.listPositions({ wallet: walletAddress, limit: 100 });
+    return (positions ?? [])
+      .filter((position) => position.marketProxy.toLowerCase() === marketId.toLowerCase())
+      .map((position) => ({
+        outcomeIdx: Number(position.outcomeIdx),
+        sharesAtomic: position.shares,
+        redeemedOrLiquidated: position.redeemedOrLiquidated,
+        tokensRedeemedAtomic: position.tokensRedeemed,
+      }));
   }
 }
 

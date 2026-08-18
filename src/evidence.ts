@@ -89,17 +89,20 @@ export function extractEvidence(rule: ResolutionRule, payload: unknown, now = ne
   let actual: number | string;
   let observedAt: Date;
   let aggregationDetail = "";
+  let publicationTime: string | undefined;
 
   if (rule.aggregation) {
     const result = aggregate(rule, payload);
     actual = result.actual;
     observedAt = result.observedAt;
+    publicationTime = observedAt.toISOString();
     aggregationDetail = ` from ${result.count} observations`;
   } else {
     if (!rule.jsonPath) throw new Error("Scalar rule requires jsonPath");
     actual = scalarAt(payload, rule.jsonPath);
     const observedAtValue = rule.observedAtPath ? scalarAt(payload, rule.observedAtPath) : now.toISOString();
     observedAt = parseTimestamp(observedAtValue, rule.observedAtFormat);
+    if (rule.observedAtPath) publicationTime = observedAt.toISOString();
   }
 
   const conditionsMet = (rule.conditions ?? []).every((condition) =>
@@ -114,6 +117,7 @@ export function extractEvidence(rule: ResolutionRule, payload: unknown, now = ne
     source: rule.sourceName,
     sourceUrl: rule.sourceUrl,
     observedAt: observedAt.toISOString(),
+    publicationTime,
     probability: conditionsMet ? (outcomeTrue ? 0.995 : 0.005) : 0.5,
     confidence: conditionsMet && fresh ? 0.98 : 0,
     detail: conditionsMet
@@ -128,6 +132,11 @@ export async function fetchEvidence(rule: ResolutionRule, now = new Date()): Pro
     signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) throw new Error(`${rule.sourceName} returned HTTP ${response.status}`);
-  const payload: unknown = await response.json();
-  return extractEvidence(rule, payload, now);
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error(`${rule.sourceName} returned invalid JSON`);
+  }
+  return { ...extractEvidence(rule, payload, now), fetchedAt: new Date().toISOString() };
 }

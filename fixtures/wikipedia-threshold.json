@@ -16,6 +16,7 @@
       "source": "Wikimedia Pageviews API",
       "sourceUrl": "https://wikimedia.org/api/rest_v1/metrics/pageviews/",
       "observedAt": "NOW",
+      "publicationTime": "NOW",
       "probability": 0.995,
       "confidence": 0.98,
       "detail": "102,431 verified views; settlement threshold crossed"

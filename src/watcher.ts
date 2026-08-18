@@ -1,12 +1,22 @@
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import { evaluateMarket } from "./engine.js";
 import { fetchEvidence } from "./evidence.js";
+import { appendLedgerRecord, available, unavailable } from "./receipt.js";
 import type { Decision, EvidenceSignal, ResolutionRule, RiskPolicy, TradingGateway } from "./types.js";
 
 export const DEFAULT_POLL_INTERVAL_MS = 60_000;
 export const DEFAULT_RETRY_BASE_MS = 1_000;
 export const DEFAULT_RETRY_MAX_MS = 30_000;
+export const DEFAULT_WATCHER_STATE_PATH = "artifacts/watcher-state.json";
+
+export interface WatcherStateEntry {
+  fingerprint: string;
+  status: "pending" | "processed" | "ambiguous";
+  transactionHash?: string;
+  updatedAt: string;
+}
 
 export type WatcherStatus =
   | { type: "cycle"; marketCount: number; ruleGroupCount: number }
@@ -25,7 +35,9 @@ export interface WatcherOptions {
   retryBaseMs?: number;
   retryMaxMs?: number;
   signal?: AbortSignal;
-  state?: Map<string, string>;
+  state?: Map<string, WatcherStateEntry>;
+  stateFile?: string | false;
+  receiptPath?: string;
   loadRules?: () => Promise<ResolutionRule[]>;
   loadEvidence?: (rule: ResolutionRule) => Promise<EvidenceSignal>;
   evaluate?: typeof evaluateMarket;
@@ -92,8 +104,78 @@ function fingerprint(market: Decision["market"], rules: ResolutionRule[], eviden
   return createHash("sha256").update(JSON.stringify(state)).digest("hex");
 }
 
+interface WatcherStateFile {
+  version: 1;
+  opportunities: Record<string, WatcherStateEntry>;
+}
+
+export async function loadWatcherState(path = DEFAULT_WATCHER_STATE_PATH): Promise<Map<string, WatcherStateEntry>> {
+  try {
+    const parsed = JSON.parse(await readFile(path, "utf8")) as Partial<WatcherStateFile>;
+    if (parsed.version !== 1 || !parsed.opportunities || typeof parsed.opportunities !== "object") {
+      throw new Error("watcher state has an unsupported schema");
+    }
+    return new Map(Object.entries(parsed.opportunities));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Map();
+    throw error;
+  }
+}
+
+export async function persistWatcherState(state: Map<string, WatcherStateEntry>, path = DEFAULT_WATCHER_STATE_PATH): Promise<void> {
+  const body: WatcherStateFile = { version: 1, opportunities: Object.fromEntries(state) };
+  const temporary = `${path}.${process.pid}.tmp`;
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(temporary, `${JSON.stringify(body, null, 2)}\n`, "utf8");
+  await rename(temporary, path);
+}
+
+async function storeState(
+  state: Map<string, WatcherStateEntry>,
+  key: string,
+  entry: WatcherStateEntry,
+  stateFile: string | false,
+) {
+  state.set(key, entry);
+  if (stateFile) await persistWatcherState(state, stateFile);
+}
+
+export function failedStage(error: Error): "source" | "schema" {
+  return /Missing|Expected|Invalid|records array|observations|threshold/i.test(error.message) ? "schema" : "source";
+}
+
+export async function recordOpportunityFailure(
+  market: Decision["market"] | undefined,
+  rules: ResolutionRule[],
+  opportunityId: string,
+  reason: string,
+  stage: "market" | "source" | "schema" | "transaction",
+  receiptPath?: string,
+  transaction: { status: "not_submitted" | "ambiguous"; error?: string } = { status: "not_submitted" },
+) {
+  const first = rules[0];
+  if (!first) return;
+  const marketProbability = market?.probabilities[first.outcomeIdx];
+  await appendLedgerRecord({
+    type: "failure",
+    opportunityId,
+    terminal: true,
+    stage,
+    marketId: first.marketId,
+    outcomeIdx: first.outcomeIdx,
+    rules,
+    reason,
+    marketProbability: marketProbability === undefined ? unavailable("market probability is unavailable") : available(marketProbability),
+    riskDecision: { action: "skip", reason },
+    transaction,
+  }, receiptPath);
+}
+
 export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
-  const state = options.state ?? new Map<string, string>();
+  const stateFile = options.stateFile === undefined
+    ? (options.state ? false : DEFAULT_WATCHER_STATE_PATH)
+    : options.stateFile;
+  const state = options.state ?? (stateFile ? await loadWatcherState(stateFile) : new Map<string, WatcherStateEntry>());
   const loadRules = options.loadRules ?? (() => loadResolutionRules(options.ruleFile));
   const loadEvidence = options.loadEvidence ?? fetchEvidence;
   const evaluate = options.evaluate ?? evaluateMarket;
@@ -110,13 +192,22 @@ export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
     const market = markets.find((candidate) => candidate.id.toLowerCase() === first.marketId.toLowerCase());
     if (!market) {
       options.onStatus?.({ type: "missing-market", marketId: first.marketId });
+      await recordOpportunityFailure(undefined, groupedRules, createHash("sha256").update(JSON.stringify(groupedRules)).digest("hex"), "open competition market not found", "market", options.receiptPath);
       continue;
     }
 
     try {
-      const evidence = await Promise.all(groupedRules.map((rule) => loadEvidence(rule)));
+      let evidence: EvidenceSignal[];
+      try {
+        evidence = await Promise.all(groupedRules.map((rule) => loadEvidence(rule)));
+      } catch (error) {
+        const failure = error instanceof Error ? error : new Error(String(error));
+        const failureId = createHash("sha256").update(JSON.stringify({ key, rules: groupedRules })).digest("hex");
+        await recordOpportunityFailure(market, groupedRules, failureId, failure.message, failedStage(failure), options.receiptPath);
+        throw failure;
+      }
       const currentFingerprint = fingerprint(market, groupedRules, evidence);
-      if (state.get(key) === currentFingerprint) {
+      if (state.get(key)?.fingerprint === currentFingerprint) {
         options.onStatus?.({ type: "duplicate", key });
         continue;
       }
@@ -126,6 +217,11 @@ export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
         listOpenMarkets: () => options.gateway.listOpenMarkets(),
         quoteBuy: (...args) => options.gateway.quoteBuy(...args),
         buy: async (plan) => {
+          await storeState(state, key, {
+            fingerprint: currentFingerprint,
+            status: "pending",
+            updatedAt: new Date().toISOString(),
+          }, stateFile);
           buyAttempted = true;
           return options.gateway.buy(plan);
         },
@@ -138,15 +234,29 @@ export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
           evidence,
           options.policy,
           options.execute ?? false,
+          { receiptPath: options.receiptPath, opportunityId: currentFingerprint },
         );
-        state.set(key, currentFingerprint);
+        if (buyAttempted && !decision.transactionHash) {
+          throw new Error("order returned without a transaction hash");
+        }
+        await storeState(state, key, {
+          fingerprint: currentFingerprint,
+          status: "processed",
+          transactionHash: decision.transactionHash,
+          updatedAt: new Date().toISOString(),
+        }, stateFile);
         options.onDecision?.(decision);
       } catch (error) {
         const failure = error instanceof Error ? error : new Error(String(error));
         if (buyAttempted) {
           // The gateway may have accepted the order before its response failed.
           // Fail closed until the market or evidence changes rather than risk a duplicate order.
-          state.set(key, currentFingerprint);
+          await storeState(state, key, {
+            fingerprint: currentFingerprint,
+            status: "ambiguous",
+            updatedAt: new Date().toISOString(),
+          }, stateFile);
+          await recordOpportunityFailure(market, groupedRules, currentFingerprint, failure.message, "transaction", options.receiptPath, { status: "ambiguous", error: failure.message });
           options.onStatus?.({ type: "ambiguous-order", key, error: failure });
         }
         throw failure;
@@ -164,12 +274,15 @@ export async function runWatcher(options: WatcherOptions): Promise<void> {
   const retryMaxMs = positive("retry maximum", options.retryMaxMs ?? DEFAULT_RETRY_MAX_MS);
   if (retryMaxMs < retryBaseMs) throw new Error("retry maximum must be at least retry base");
   const sleep = options.sleep ?? wait;
-  const state = options.state ?? new Map<string, string>();
+  const stateFile = options.stateFile === undefined
+    ? (options.state ? false : DEFAULT_WATCHER_STATE_PATH)
+    : options.stateFile;
+  const state = options.state ?? (stateFile ? await loadWatcherState(stateFile) : new Map<string, WatcherStateEntry>());
   let consecutiveFailures = 0;
 
   while (!options.signal?.aborted) {
     try {
-      await runWatcherCycle({ ...options, state });
+      await runWatcherCycle({ ...options, state, stateFile });
       consecutiveFailures = 0;
       await sleep(intervalMs, options.signal);
     } catch (error) {
