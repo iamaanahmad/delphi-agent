@@ -1,9 +1,10 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { evaluateMarket } from "./engine.js";
 import { fetchEvidence } from "./evidence.js";
 import { appendLedgerRecord, available, unavailable } from "./receipt.js";
+import { appendTelemetry, type TelemetryContext } from "./telemetry.js";
 import type { Decision, EvidenceSignal, ResolutionRule, RiskPolicy, TradingGateway } from "./types.js";
 
 export const DEFAULT_POLL_INTERVAL_MS = 60_000;
@@ -44,6 +45,8 @@ export interface WatcherOptions {
   sleep?: (milliseconds: number, signal?: AbortSignal) => Promise<void>;
   onDecision?: (decision: Decision) => void;
   onStatus?: (status: WatcherStatus) => void;
+  telemetryEnvironment?: TelemetryContext["environment"];
+  runIdFactory?: () => string;
 }
 
 function positive(name: string, value: number): number {
@@ -152,11 +155,12 @@ export async function recordOpportunityFailure(
   stage: "market" | "source" | "schema" | "transaction",
   receiptPath?: string,
   transaction: { status: "not_submitted" | "ambiguous"; error?: string } = { status: "not_submitted" },
+  telemetry?: TelemetryContext,
 ) {
   const first = rules[0];
   if (!first) return;
   const marketProbability = market?.probabilities[first.outcomeIdx];
-  await appendLedgerRecord({
+  const sourceRecordHash = await appendLedgerRecord({
     type: "failure",
     opportunityId,
     terminal: true,
@@ -169,6 +173,16 @@ export async function recordOpportunityFailure(
     riskDecision: { action: "skip", reason },
     transaction,
   }, receiptPath);
+  if (telemetry) {
+    await appendTelemetry({
+      ...telemetry,
+      event: stage === "transaction" ? "order_failed" : "evidence_rejected",
+      marketId: first.marketId,
+      opportunityId,
+      sourceRecordHash,
+      data: { stage, transactionStatus: transaction.status },
+    }, receiptPath);
+  }
 }
 
 export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
@@ -179,6 +193,11 @@ export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
   const loadRules = options.loadRules ?? (() => loadResolutionRules(options.ruleFile));
   const loadEvidence = options.loadEvidence ?? fetchEvidence;
   const evaluate = options.evaluate ?? evaluateMarket;
+  const telemetry: TelemetryContext | undefined = options.receiptPath ? {
+    runId: options.runIdFactory?.() ?? randomUUID(),
+    environment: options.telemetryEnvironment ?? (options.execute ? "live" : "dry_run"),
+  } : undefined;
+  if (telemetry) await appendTelemetry({ ...telemetry, event: "run_started", data: {} }, options.receiptPath);
   const rules = await loadRules();
   const groups = groupRules(rules);
   const markets = await options.gateway.listOpenMarkets();
@@ -192,7 +211,7 @@ export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
     const market = markets.find((candidate) => candidate.id.toLowerCase() === first.marketId.toLowerCase());
     if (!market) {
       options.onStatus?.({ type: "missing-market", marketId: first.marketId });
-      await recordOpportunityFailure(undefined, groupedRules, createHash("sha256").update(JSON.stringify(groupedRules)).digest("hex"), "open competition market not found", "market", options.receiptPath);
+      await recordOpportunityFailure(undefined, groupedRules, createHash("sha256").update(JSON.stringify(groupedRules)).digest("hex"), "open competition market not found", "market", options.receiptPath, { status: "not_submitted" }, telemetry);
       continue;
     }
 
@@ -203,7 +222,7 @@ export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
       } catch (error) {
         const failure = error instanceof Error ? error : new Error(String(error));
         const failureId = createHash("sha256").update(JSON.stringify({ key, rules: groupedRules })).digest("hex");
-        await recordOpportunityFailure(market, groupedRules, failureId, failure.message, failedStage(failure), options.receiptPath);
+        await recordOpportunityFailure(market, groupedRules, failureId, failure.message, failedStage(failure), options.receiptPath, { status: "not_submitted" }, telemetry);
         throw failure;
       }
       const currentFingerprint = fingerprint(market, groupedRules, evidence);
@@ -234,7 +253,7 @@ export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
           evidence,
           options.policy,
           options.execute ?? false,
-          { receiptPath: options.receiptPath, opportunityId: currentFingerprint },
+          { receiptPath: options.receiptPath, opportunityId: currentFingerprint, telemetry },
         );
         if (buyAttempted && !decision.transactionHash) {
           throw new Error("order returned without a transaction hash");
@@ -256,7 +275,7 @@ export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
             status: "ambiguous",
             updatedAt: new Date().toISOString(),
           }, stateFile);
-          await recordOpportunityFailure(market, groupedRules, currentFingerprint, failure.message, "transaction", options.receiptPath, { status: "ambiguous", error: failure.message });
+          await recordOpportunityFailure(market, groupedRules, currentFingerprint, failure.message, "transaction", options.receiptPath, { status: "ambiguous", error: failure.message }, telemetry);
           options.onStatus?.({ type: "ambiguous-order", key, error: failure });
         }
         throw failure;

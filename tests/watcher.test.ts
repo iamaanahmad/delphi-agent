@@ -273,9 +273,10 @@ test("records schema failures as terminal hash-linked ledger entries", async () 
     previousHash: string;
     record: { type: string; stage: string; terminal: boolean };
   });
-  assert.equal(entries.length, 1);
+  assert.equal(entries.length, 3);
   assert.equal(entries[0]?.previousHash, "GENESIS");
-  assert.equal(entries[0]?.record.type, "failure");
-  assert.equal(entries[0]?.record.stage, "schema");
-  assert.equal(entries[0]?.record.terminal, true);
+  assert.equal(entries[1]?.record.type, "failure");
+  assert.equal(entries[1]?.record.stage, "schema");
+  assert.equal(entries[1]?.record.terminal, true);
+  assert.equal(entries[2]?.record.type, "telemetry");
 });

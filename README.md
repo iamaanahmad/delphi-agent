@@ -93,6 +93,7 @@ This is competition testnet software using play-money TST, not financial advice 
 - Quote-aware size search designed for shallow competition LMSR curves.
 - Two-switch execution authorization and dry-run defaults.
 - A hash-linked lifecycle ledger that can record trades, refusals, failures, wallet changes, settlement, redemption, and realized P&L. The full lifecycle is proven with fixtures, not a live order.
+- Optional server-side lifecycle metrics derived from the verified ledger, with separate live, dry-run, replay, and test namespaces. Expected replay P&L is never counted as realized profit.
 - Persistent duplicate and ambiguous-order protection across watcher restarts.
 - Read-only reconciliation that reports unsupported or unavailable SDK fields explicitly.
 - Deterministic replay with no API, wallet, gas, or network dependency.
@@ -101,7 +102,7 @@ This is competition testnet software using play-money TST, not financial advice 
 
 Requirements: Node.js 20+.
 
-Before adding wallet credentials or enabling live execution, read the [Terms of use](TERMS.md) and [Privacy notice](PRIVACY.md). Settlement Edge has no hosted accounts, cookies, or analytics. Live commands can store the operator's public wallet address and transaction history in the local ledger and send wallet queries or transactions to the configured Delphi, RPC, and signing providers.
+Before adding wallet credentials or enabling live execution, read the [Terms of use](TERMS.md) and [Privacy notice](PRIVACY.md). Settlement Edge has no hosted accounts, cookies, or advertising tracking. Live commands can store the operator's public wallet address and transaction history in the local ledger and send wallet queries or transactions to the configured Delphi, RPC, and signing providers. Optional server-side lifecycle metrics are disabled by default and exclude wallet addresses, transaction hashes, source URLs and identifiers, credentials, and free-form failure text.
 
 ```bash
 npm install
@@ -237,6 +238,7 @@ src/strategy.ts   Conservative probability and quote-aware sizing
 src/engine.ts     Decision pipeline and safety stops
 src/gateway.ts    Official Delphi SDK and deterministic replay gateways
 src/receipt.ts    Backward-compatible hash-linked lifecycle ledger
+src/metrics.ts    Verified ledger-to-project-metrics ingestion
 src/reconciliation.ts Read-only settlement and realized-P&L reconciliation
 fixtures/         Credential-free judge replay
 tests/            Risk, evidence, strategy, and engine checks

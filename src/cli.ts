@@ -1,11 +1,14 @@
 import "dotenv/config";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { loadRiskPolicy, liveTradingEnabled } from "./config.js";
 import { evaluateMarket } from "./engine.js";
 import { fetchEvidence } from "./evidence.js";
 import { DelphiGateway, ReplayGateway } from "./gateway.js";
 import { reconcileMarket } from "./reconciliation.js";
+import { syncLedgerTelemetry } from "./metrics.js";
+import { DEFAULT_LEDGER_PATH, TELEMETRY_ENVIRONMENTS } from "./receipt.js";
+import { appendTelemetry, type TelemetryContext } from "./telemetry.js";
 import type { EvidenceSignal, MarketView, ResolutionRule } from "./types.js";
 import {
   DEFAULT_POLL_INTERVAL_MS,
@@ -47,8 +50,12 @@ async function replay(file: string) {
     publicationTime: item.publicationTime === "NOW" ? new Date().toISOString() : item.publicationTime,
   }));
   const gateway = new ReplayGateway([fixture.market]);
+  const receiptPath = process.env.SETTLEMENT_EDGE_RECEIPT_PATH ?? DEFAULT_LEDGER_PATH;
+  const telemetry: TelemetryContext = { runId: randomUUID(), environment: "replay" };
+  await appendTelemetry({ ...telemetry, event: "run_started", data: {} }, receiptPath);
   printDecision(await evaluateMarket(gateway, fixture.market, fixture.outcomeIdx, fixture.evidence, loadRiskPolicy(), false, {
-    receiptPath: process.env.SETTLEMENT_EDGE_RECEIPT_PATH,
+    receiptPath,
+    telemetry,
   }), "simulated-replay");
 }
 
@@ -74,7 +81,9 @@ async function run(ruleFile: string) {
     groups.set(key, [...(groups.get(key) ?? []), rule]);
   }
   const execute = liveTradingEnabled();
-  const receiptPath = process.env.SETTLEMENT_EDGE_RECEIPT_PATH;
+  const receiptPath = process.env.SETTLEMENT_EDGE_RECEIPT_PATH ?? DEFAULT_LEDGER_PATH;
+  const telemetry: TelemetryContext = { runId: randomUUID(), environment: execute ? "live" : "dry_run" };
+  await appendTelemetry({ ...telemetry, event: "run_started", data: {} }, receiptPath);
   console.log(execute ? "LIVE EXECUTION ENABLED" : "DRY-RUN: no orders can be submitted");
   for (const groupedRules of groups.values()) {
     const first = groupedRules[0];
@@ -82,7 +91,7 @@ async function run(ruleFile: string) {
     const market = markets.find((candidate) => candidate.id.toLowerCase() === first.marketId.toLowerCase());
     if (!market) {
       console.error(`Skipping ${first.marketId}: open competition market not found`);
-      await recordOpportunityFailure(undefined, groupedRules, createHash("sha256").update(JSON.stringify(groupedRules)).digest("hex"), "open competition market not found", "market", receiptPath);
+      await recordOpportunityFailure(undefined, groupedRules, createHash("sha256").update(JSON.stringify(groupedRules)).digest("hex"), "open competition market not found", "market", receiptPath, { status: "not_submitted" }, telemetry);
       continue;
     }
     let evidence: EvidenceSignal[];
@@ -91,20 +100,32 @@ async function run(ruleFile: string) {
     } catch (error) {
       const failure = error instanceof Error ? error : new Error(String(error));
       const id = createHash("sha256").update(JSON.stringify({ marketId: market.id, groupedRules })).digest("hex");
-      await recordOpportunityFailure(market, groupedRules, id, failure.message, failedStage(failure), receiptPath);
+      await recordOpportunityFailure(market, groupedRules, id, failure.message, failedStage(failure), receiptPath, { status: "not_submitted" }, telemetry);
       console.error(`Skipping ${first.marketId}: ${failure.message}`);
       continue;
     }
     const id = createHash("sha256").update(JSON.stringify({ market, groupedRules, evidence })).digest("hex");
-    printDecision(await evaluateMarket(gateway, market, first.outcomeIdx, evidence, loadRiskPolicy(), execute, { opportunityId: id, receiptPath }));
+    printDecision(await evaluateMarket(gateway, market, first.outcomeIdx, evidence, loadRiskPolicy(), execute, { opportunityId: id, receiptPath, telemetry }));
   }
 }
 
 async function reconcile(marketId: string, args: string[]) {
-  const ledgerPath = option(args, "--ledger") ?? process.env.SETTLEMENT_EDGE_RECEIPT_PATH;
-  const result = await reconcileMarket(new DelphiGateway(), marketId, ledgerPath);
+  const ledgerPath = option(args, "--ledger") ?? process.env.SETTLEMENT_EDGE_RECEIPT_PATH ?? DEFAULT_LEDGER_PATH;
+  const telemetry: TelemetryContext = { runId: randomUUID(), environment: "live" };
+  await appendTelemetry({ ...telemetry, event: "run_started", marketId, data: {} }, ledgerPath);
+  const result = await reconcileMarket(new DelphiGateway(), marketId, ledgerPath, telemetry);
   console.log("SETTLEMENT EDGE RECONCILIATION");
   console.log(JSON.stringify(result, null, 2));
+}
+
+async function syncMetrics(args: string[]) {
+  const ledgerPath = option(args, "--ledger") ?? process.env.SETTLEMENT_EDGE_RECEIPT_PATH ?? DEFAULT_LEDGER_PATH;
+  const environment = option(args, "--environment") ?? "live";
+  if (!TELEMETRY_ENVIRONMENTS.includes(environment as TelemetryContext["environment"])) {
+    throw new Error("metrics environment must be live, dry_run, replay, or test");
+  }
+  const count = await syncLedgerTelemetry(ledgerPath, [environment as TelemetryContext["environment"]]);
+  console.log(`Synced ${count} ${environment} telemetry event(s) from the verified ledger.`);
 }
 
 const positiveOption = (name: string, value: string | undefined, fallback: number): number => {
@@ -152,7 +173,8 @@ async function watch(ruleFile: string, args: string[]) {
       retryBaseMs,
       retryMaxMs,
       stateFile: process.env.SETTLEMENT_EDGE_WATCHER_STATE_PATH,
-      receiptPath: process.env.SETTLEMENT_EDGE_RECEIPT_PATH,
+      receiptPath: process.env.SETTLEMENT_EDGE_RECEIPT_PATH ?? DEFAULT_LEDGER_PATH,
+      telemetryEnvironment: execute ? "live" : "dry_run",
       signal: controller.signal,
       onDecision: printDecision,
       onStatus: printWatcherStatus,
@@ -179,8 +201,10 @@ async function main() {
   } else if (command === "reconcile") {
     if (!argument) throw new Error("reconcile requires a market address");
     await reconcile(argument, args);
+  } else if (command === "metrics") {
+    await syncMetrics(commandArgs);
   } else {
-    console.log("Settlement Edge\n\n  npm run demo                                      Deterministic proof with no credentials\n  npm run scan                                      Read live competition markets without trading\n  npm run agent -- <rules>                          Evaluate declared sources once; dry-run by default\n  npm run watch -- <rules> --interval-ms N          Poll declared sources continuously; defaults to 60000ms\n  npm run reconcile -- <market> [--ledger <path>]  Append read-only settlement and wallet reconciliation");
+    console.log("Settlement Edge\n\n  npm run demo                                      Deterministic proof with no credentials\n  npm run scan                                      Read live competition markets without trading\n  npm run agent -- <rules>                          Evaluate declared sources once; dry-run by default\n  npm run watch -- <rules> --interval-ms N          Poll declared sources continuously; defaults to 60000ms\n  npm run reconcile -- <market> [--ledger <path>]  Append read-only settlement and wallet reconciliation\n  npm run metrics -- [--ledger <path>]              Sync verified live telemetry to project metrics");
   }
 }
 
