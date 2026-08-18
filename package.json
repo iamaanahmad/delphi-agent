@@ -12,6 +12,7 @@
     "check": "npm run build && npm test",
     "demo": "tsx src/cli.ts replay fixtures/wikipedia-threshold.json",
     "scan": "tsx src/cli.ts scan",
+    "preflight": "tsx src/preflight-cli.ts",
     "agent": "tsx src/cli.ts run",
     "watch": "tsx src/cli.ts watch",
     "test": "tsx --test tests/**/*.test.ts",

@@ -122,6 +122,14 @@ cp .env.example .env
 npm run scan
 ```
 
+Before enabling the watcher, run the live-trading preflight:
+
+```bash
+npm run preflight
+```
+
+It checks configuration, signer identity, wallet-registration visibility, ETH and TST balances, reviewed rules, both execution switches, live quotes, and receipt storage. Every check is read-only and reported separately. The command exits non-zero when a required automated gate fails, never prints credential values, and never submits an approval or order. DoraHacks does not expose a reliable registration endpoint, so that check is reported as unavailable and must be confirmed on the competition page.
+
 To evaluate a real market, copy `config/resolution-rules.example.json`, replace the market address and settlement rule with the exact competition wording, then run:
 
 ```bash
