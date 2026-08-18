@@ -99,6 +99,8 @@ This is competition testnet software using play-money TST, not financial advice 
 
 Requirements: Node.js 20+.
 
+Before adding wallet credentials or enabling live execution, read the [Terms of use](TERMS.md) and [Privacy notice](PRIVACY.md). Settlement Edge has no hosted accounts, cookies, or analytics. Live commands can store the operator's public wallet address and transaction history in the local ledger and send wallet queries or transactions to the configured Delphi, RPC, and signing providers.
+
 ```bash
 npm install
 npm run check
@@ -222,6 +224,8 @@ The same evidence-to-action design can make autonomous agents more accountable b
 Built by [iamaanahmad](https://github.com/iamaanahmad) for the Delphi Agent Arena Competition.
 
 Project contact: [dorahacks@mail.tin.computer](mailto:dorahacks@mail.tin.computer)
+
+[Terms of use](TERMS.md) | [Privacy notice](PRIVACY.md)
 
 ## Repository map
 
