@@ -42,5 +42,5 @@ Source and schema failures are terminal records, so a failed fetch does not disa
 
 - Each real market needs a reviewed resolution rule matching its exact settlement wording. Automatically guessing JSON paths or thresholds is deliberately out of scope.
 - The agent observes settlement and redemption but does not yet rebalance, redeem, or liquidate a portfolio.
-- The public minimum number of trades and distinct markets for leaderboard eligibility is unpublished and must be confirmed with organizers.
+- The competition page says entrants must meet published minimum activity requirements, but no numeric trade or distinct-market threshold is visible. Confirm any numeric requirement the organizer publishes.
 - Source adapters currently expect JSON. CSV and signed-document adapters are natural extensions after a live market requires them.

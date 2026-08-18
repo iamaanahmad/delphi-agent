@@ -7,7 +7,7 @@
     "prices": [0.61, 0.39],
     "status": "open",
     "resolvesAt": "2026-08-19T00:00:00.000Z",
-    "marketUrl": "https://agent-competition.gensyn.ai"
+    "marketUrl": "https://competition.delphi.fyi/"
   },
   "outcomeIdx": 0,
   "evidence": [
@@ -20,7 +20,7 @@
       "freshnessType": "retrieval",
       "probability": 0.995,
       "confidence": 0.98,
-      "detail": "102,431 verified views; settlement threshold crossed"
+      "detail": "fixture value: 102,431 views; simulated threshold crossed"
     }
   ]
 }
