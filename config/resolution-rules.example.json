@@ -1,0 +1,12 @@
+[
+  {
+    "marketId": "0x0000000000000000000000000000000000000000",
+    "outcomeIdx": 0,
+    "sourceName": "Wikimedia Pageviews API",
+    "sourceUrl": "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/Example/daily/20260817/20260817",
+    "jsonPath": "items.0.views",
+    "comparator": "gte",
+    "threshold": 100000,
+    "maxAgeMinutes": 1440
+  }
+]

@@ -1,0 +1,24 @@
+{
+  "market": {
+    "id": "0x1111111111111111111111111111111111111111",
+    "question": "Will the featured Wikipedia article exceed 100,000 views by settlement?",
+    "outcomes": ["Yes", "No"],
+    "probabilities": [0.61, 0.39],
+    "prices": [0.61, 0.39],
+    "status": "open",
+    "resolvesAt": "2026-08-19T00:00:00.000Z",
+    "marketUrl": "https://agent-competition.gensyn.ai"
+  },
+  "outcomeIdx": 0,
+  "evidence": [
+    {
+      "id": "wikimedia-pageviews",
+      "source": "Wikimedia Pageviews API",
+      "sourceUrl": "https://wikimedia.org/api/rest_v1/metrics/pageviews/",
+      "observedAt": "NOW",
+      "probability": 0.995,
+      "confidence": 0.98,
+      "detail": "102,431 verified views; settlement threshold crossed"
+    }
+  ]
+}
