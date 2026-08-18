@@ -1,0 +1,31 @@
+{
+  "name": "settlement-edge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Evidence-first autonomous trading agent for the Gensyn Delphi Agent Arena",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "npm run build && npm test",
+    "demo": "tsx src/cli.ts replay fixtures/wikipedia-threshold.json",
+    "scan": "tsx src/cli.ts scan",
+    "agent": "tsx src/cli.ts run",
+    "test": "tsx --test tests/**/*.test.ts",
+    "validate:submission": "node scripts/validate-submission.mjs"
+  },
+  "dependencies": {
+    "@gensyn-ai/gensyn-delphi-sdk": "^2.1.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.0"
+  },
+  "overrides": {
+    "axios": "^1.18.0"
+  }
+}
