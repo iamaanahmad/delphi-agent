@@ -20,6 +20,8 @@ const rule: ResolutionRule = {
   jsonPath: "value",
   comparator: "gte",
   threshold: 1,
+  eventAtPath: "event_at",
+  freshness: { type: "retrieval" },
 };
 
 const readyEnv: NodeJS.ProcessEnv = {
@@ -107,6 +109,13 @@ test("fails closed on invalid reviewed rules", async () => {
   const results = await run(new FixtureProbe(), { loadRules: async () => [invalid] });
   assert.equal(results.find((result) => result.gate === "Reviewed rules")?.status, "fail");
   assert.equal(results.find((result) => result.gate === "Quote availability")?.status, "fail");
+  assert.equal(preflightPassed(results), false);
+});
+
+test("fails closed when a reviewed rule has no freshness source", async () => {
+  const invalid = { ...rule, freshness: undefined } as unknown as ResolutionRule;
+  const results = await run(new FixtureProbe(), { loadRules: async () => [invalid] });
+  assert.equal(results.find((result) => result.gate === "Reviewed rules")?.status, "fail");
   assert.equal(preflightPassed(results), false);
 });
 

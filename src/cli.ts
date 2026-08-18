@@ -41,7 +41,8 @@ async function replay(file: string) {
   const fixture = JSON.parse(await readFile(file, "utf8")) as ReplayFixture;
   fixture.evidence = fixture.evidence.map((item) => ({
     ...item,
-    observedAt: item.observedAt === "NOW" ? new Date().toISOString() : item.observedAt,
+    eventTime: item.eventTime === "NOW" ? new Date().toISOString() : item.eventTime,
+    freshnessTime: item.freshnessTime === "NOW" ? new Date().toISOString() : item.freshnessTime,
     publicationTime: item.publicationTime === "NOW" ? new Date().toISOString() : item.publicationTime,
   }));
   const gateway = new ReplayGateway([fixture.market]);

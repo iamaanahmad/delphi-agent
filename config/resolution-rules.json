@@ -7,9 +7,10 @@
     "jsonPath": "items.0.views",
     "comparator": "gt",
     "threshold": 2250,
-    "observedAtPath": "items.0.timestamp",
-    "observedAtFormat": "wikimedia-hour",
-    "maxAgeMinutes": 1440
+    "eventAtPath": "items.0.timestamp",
+    "eventAtFormat": "wikimedia-hour",
+    "freshness": { "type": "retrieval" },
+    "maxFreshnessAgeMinutes": 1440
   },
   {
     "marketId": "0x360274d153c58566943cb21088dd95e45638bda3",
@@ -21,13 +22,14 @@
     "aggregation": {
       "recordsPath": "data",
       "valuePath": "v",
-      "observedAtPath": "t",
-      "observedAtFormat": "noaa-gmt-minute",
+      "eventAtPath": "t",
+      "eventAtFormat": "noaa-gmt-minute",
       "reducer": "max",
       "windowStart": "2026-08-20T18:00:00Z",
       "windowEnd": "2026-08-20T23:54:00Z"
     },
-    "maxAgeMinutes": 30
+    "freshness": { "type": "retrieval" },
+    "maxFreshnessAgeMinutes": 30
   },
   {
     "marketId": "0xbf1ce7c9d751b92bfac4acefe0e87d82b1d30163",
@@ -39,8 +41,9 @@
     "threshold": {
       "jsonPath": "match_information.away_team_goals"
     },
-    "observedAtPath": "match_information.kickoff_time",
-    "observedAtFormat": "iso",
+    "eventAtPath": "match_information.kickoff_time",
+    "eventAtFormat": "iso",
+    "freshness": { "type": "retrieval" },
     "conditions": [
       {
         "jsonPath": "match_information.match_status",
@@ -48,6 +51,6 @@
         "threshold": "finalWhistle"
       }
     ],
-    "maxAgeMinutes": 240
+    "maxFreshnessAgeMinutes": 240
   }
 ]

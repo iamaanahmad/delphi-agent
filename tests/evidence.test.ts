@@ -52,13 +52,66 @@ test("reviewed fixtures preserve exact non-match boundaries", async () => {
   assert.deepEqual(observations.map((item) => item.probability), [0.005, 0.005, 0.005]);
 });
 
-test("stale reviewed evidence is retained but cannot carry confidence", async () => {
+test("a freshly retrieved older event can carry confidence", async () => {
   const rules = await liveRules();
   const fixture = await loadJson("../fixtures/live-rules/stale.json");
   const observation = extractEvidence(rules[0]!, fixture, new Date("2026-08-20T00:01:00Z"));
   assert.equal(observation.probability, 0.995);
-  assert.equal(observation.confidence, 0);
-  assert.equal(observation.observedAt, "2026-08-18T00:00:00.000Z");
+  assert.equal(observation.confidence, 0.98);
+  assert.equal(observation.eventTime, "2026-08-18T00:00:00.000Z");
+  assert.equal(observation.freshnessTime, "2026-08-20T00:01:00.000Z");
+  assert.equal(observation.freshnessType, "retrieval");
+});
+
+const publicationRule: ResolutionRule = {
+  marketId: "0x1111111111111111111111111111111111111111",
+  outcomeIdx: 0,
+  sourceName: "Published source",
+  sourceUrl: "https://example.test/data.json",
+  jsonPath: "value",
+  comparator: "gte",
+  threshold: 1,
+  eventAtPath: "event_at",
+  freshness: { type: "publication", path: "published_at" },
+  maxFreshnessAgeMinutes: 15,
+};
+
+test("fresh publication of an older event passes at the freshness boundary", () => {
+  const observation = extractEvidence(publicationRule, {
+    value: 2,
+    event_at: "2026-08-01T00:00:00Z",
+    published_at: "2026-08-18T00:00:00Z",
+  }, new Date("2026-08-18T00:15:00Z"));
+  assert.equal(observation.eventTime, "2026-08-01T00:00:00.000Z");
+  assert.equal(observation.freshnessTime, "2026-08-18T00:00:00.000Z");
+  assert.equal(observation.publicationTime, "2026-08-18T00:00:00.000Z");
+  assert.equal(observation.confidence, 0.98);
+});
+
+test("stale and future publication timestamps cannot carry confidence", () => {
+  const payload = { value: 2, event_at: "2026-08-01T00:00:00Z" };
+  const stale = extractEvidence(publicationRule, {
+    ...payload,
+    published_at: "2026-08-18T00:00:00Z",
+  }, new Date("2026-08-18T00:15:00.001Z"));
+  const future = extractEvidence(publicationRule, {
+    ...payload,
+    published_at: "2026-08-18T00:00:00.001Z",
+  }, new Date("2026-08-18T00:00:00Z"));
+  assert.equal(stale.confidence, 0);
+  assert.equal(future.confidence, 0);
+});
+
+test("absent and malformed publication timestamps fail closed", () => {
+  const payload = { value: 2, event_at: "2026-08-01T00:00:00Z" };
+  assert.throws(
+    () => extractEvidence(publicationRule, payload, new Date("2026-08-18T00:00:00Z")),
+    /Missing scalar at published_at/,
+  );
+  assert.throws(
+    () => extractEvidence(publicationRule, { ...payload, published_at: "not-a-date" }, new Date("2026-08-18T00:00:00Z")),
+    /Invalid source timestamp/,
+  );
 });
 
 test("malformed aggregate source data fails closed", async () => {

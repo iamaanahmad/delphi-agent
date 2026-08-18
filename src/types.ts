@@ -12,12 +12,16 @@ export interface RuleCondition {
 export interface RuleAggregation {
   recordsPath: string;
   valuePath: string;
-  observedAtPath: string;
-  observedAtFormat?: TimestampFormat;
+  eventAtPath: string;
+  eventAtFormat?: TimestampFormat;
   reducer: "max";
   windowStart: string;
   windowEnd: string;
 }
+
+export type RuleFreshness =
+  | { type: "publication"; path: string; format?: TimestampFormat }
+  | { type: "retrieval" };
 
 export interface MarketView {
   id: string;
@@ -34,7 +38,9 @@ export interface EvidenceSignal {
   id: string;
   source: string;
   sourceUrl: string;
-  observedAt: string;
+  eventTime: string;
+  freshnessTime: string;
+  freshnessType: RuleFreshness["type"];
   publicationTime?: string;
   fetchedAt?: string;
   probability: number;
@@ -71,11 +77,12 @@ export interface ResolutionRule {
   jsonPath?: string;
   comparator: Comparator;
   threshold: RuleThreshold;
-  observedAtPath?: string;
-  observedAtFormat?: TimestampFormat;
+  eventAtPath?: string;
+  eventAtFormat?: TimestampFormat;
+  freshness: RuleFreshness;
   aggregation?: RuleAggregation;
   conditions?: RuleCondition[];
-  maxAgeMinutes?: number;
+  maxFreshnessAgeMinutes?: number;
 }
 
 export interface RiskPolicy {

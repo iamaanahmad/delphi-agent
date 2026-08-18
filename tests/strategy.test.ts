@@ -15,7 +15,7 @@ const policy: RiskPolicy = {
 };
 const signal = (probability: number): EvidenceSignal => ({
   id: "source", source: "Primary API", sourceUrl: "https://example.test",
-  observedAt: new Date().toISOString(), probability, confidence: 0.98, detail: "fixture",
+  eventTime: "2026-08-18T00:00:00.000Z", freshnessTime: new Date().toISOString(), freshnessType: "retrieval", probability, confidence: 0.98, detail: "fixture",
 });
 
 test("shrinks a source probability by confidence", () => {

@@ -7,6 +7,9 @@
     "jsonPath": "items.0.views",
     "comparator": "gte",
     "threshold": 100000,
-    "maxAgeMinutes": 1440
+    "eventAtPath": "items.0.timestamp",
+    "eventAtFormat": "wikimedia-hour",
+    "freshness": { "type": "retrieval" },
+    "maxFreshnessAgeMinutes": 1440
   }
 ]

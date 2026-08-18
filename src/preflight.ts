@@ -74,7 +74,19 @@ function validateRules(rules: ResolutionRule[]): void {
     if (rule.jsonPath === undefined && rule.aggregation === undefined) {
       throw new Error(`${label} needs a scalar path or aggregation`);
     }
-    if (rule.maxAgeMinutes !== undefined && (!Number.isFinite(rule.maxAgeMinutes) || rule.maxAgeMinutes <= 0)) {
+    if (rule.jsonPath !== undefined && !rule.eventAtPath) {
+      throw new Error(`${label} is missing an event timestamp path`);
+    }
+    if (rule.aggregation !== undefined && !rule.aggregation.eventAtPath) {
+      throw new Error(`${label} is missing an aggregate event timestamp path`);
+    }
+    if (!rule.freshness || !["publication", "retrieval"].includes(rule.freshness.type)) {
+      throw new Error(`${label} has an invalid freshness source`);
+    }
+    if (rule.freshness.type === "publication" && !rule.freshness.path) {
+      throw new Error(`${label} is missing a publication timestamp path`);
+    }
+    if (rule.maxFreshnessAgeMinutes !== undefined && (!Number.isFinite(rule.maxFreshnessAgeMinutes) || rule.maxFreshnessAgeMinutes <= 0)) {
       throw new Error(`${label} has an invalid freshness limit`);
     }
   }
