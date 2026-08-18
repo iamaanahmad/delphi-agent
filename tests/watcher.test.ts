@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
+import { mkdtemp, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import { runWatcher, runWatcherCycle, wait } from "../src/watcher.js";
+import type { WatcherStateEntry } from "../src/watcher.js";
 import type { Decision, EvidenceSignal, MarketView, ResolutionRule, RiskPolicy, TradePlan, TradingGateway } from "../src/types.js";
 
 const market: MarketView = {
@@ -61,6 +65,7 @@ test("polls again at the configured interval", async () => {
     policy,
     intervalMs: 42,
     signal: controller.signal,
+    state: new Map(),
     loadRules: async () => [rule],
     loadEvidence: async () => evidence,
     evaluate: async () => decision,
@@ -82,6 +87,7 @@ test("polls every 60 seconds by default", async () => {
     ruleFile: "unused",
     policy,
     signal: controller.signal,
+    state: new Map(),
     loadRules: async () => [rule],
     loadEvidence: async () => evidence,
     evaluate: async () => decision,
@@ -114,6 +120,7 @@ test("backs off exponentially after transient gateway failures", async () => {
     retryBaseMs: 100,
     retryMaxMs: 1_000,
     signal: controller.signal,
+    state: new Map(),
     loadRules: async () => [rule],
     loadEvidence: async () => evidence,
     evaluate: async () => decision,
@@ -128,7 +135,7 @@ test("backs off exponentially after transient gateway failures", async () => {
 
 test("suppresses duplicate orders for unchanged evidence and market state", async () => {
   const gateway = new FixtureGateway();
-  const state = new Map<string, string>();
+  const state = new Map<string, WatcherStateEntry>();
   let evaluations = 0;
   const options = {
     gateway,
@@ -141,7 +148,7 @@ test("suppresses duplicate orders for unchanged evidence and market state", asyn
     evaluate: async (trackedGateway: TradingGateway) => {
       evaluations += 1;
       await trackedGateway.buy({} as TradePlan);
-      return decision;
+      return { ...decision, transactionHash: "0xtest" };
     },
   };
   await runWatcherCycle(options);
@@ -153,7 +160,7 @@ test("suppresses duplicate orders for unchanged evidence and market state", asyn
 test("blocks a replay when an order result is ambiguous", async () => {
   const gateway = new FixtureGateway();
   gateway.buy = async () => { gateway.buyCalls += 1; throw new Error("response lost"); };
-  const state = new Map<string, string>();
+  const state = new Map<string, WatcherStateEntry>();
   const options = {
     gateway,
     ruleFile: "unused",
@@ -164,7 +171,7 @@ test("blocks a replay when an order result is ambiguous", async () => {
     loadEvidence: async () => evidence,
     evaluate: async (trackedGateway: TradingGateway) => {
       await trackedGateway.buy({} as TradePlan);
-      return decision;
+      return { ...decision, transactionHash: "0xtest" };
     },
   };
   await assert.rejects(runWatcherCycle(options), /watcher evaluation/);
@@ -179,4 +186,92 @@ test("an abort signal ends an in-progress wait without waiting for the timer", a
   controller.abort();
   await pending;
   assert.ok(Date.now() - started < 1_000);
+});
+
+test("persists duplicate protection across process state reloads", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "settlement-edge-watcher-"));
+  const stateFile = join(directory, "watcher-state.json");
+  const receiptPath = join(directory, "ledger.jsonl");
+  const gateway = new FixtureGateway();
+  let evaluations = 0;
+  const options = {
+    gateway,
+    ruleFile: "unused",
+    policy,
+    execute: true,
+    stateFile,
+    receiptPath,
+    loadRules: async () => [rule],
+    loadEvidence: async () => evidence,
+    evaluate: async (trackedGateway: TradingGateway) => {
+      evaluations += 1;
+      await trackedGateway.buy({} as TradePlan);
+      return { ...decision, transactionHash: "0xtest" };
+    },
+  };
+  await runWatcherCycle(options);
+  await runWatcherCycle(options);
+  assert.equal(evaluations, 1);
+  assert.equal(gateway.buyCalls, 1);
+  const persisted = JSON.parse(await readFile(stateFile, "utf8")) as { opportunities: Record<string, WatcherStateEntry> };
+  assert.equal(Object.values(persisted.opportunities)[0]?.status, "processed");
+  assert.equal(Object.values(persisted.opportunities)[0]?.transactionHash, "0xtest");
+});
+
+test("persists ambiguous order blocking across process state reloads", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "settlement-edge-watcher-"));
+  const stateFile = join(directory, "watcher-state.json");
+  const receiptPath = join(directory, "ledger.jsonl");
+  const gateway = new FixtureGateway();
+  let pendingWasDurable = false;
+  gateway.buy = async () => {
+    gateway.buyCalls += 1;
+    const pending = JSON.parse(await readFile(stateFile, "utf8")) as { opportunities: Record<string, WatcherStateEntry> };
+    pendingWasDurable = Object.values(pending.opportunities)[0]?.status === "pending";
+    throw new Error("response lost");
+  };
+  const options = {
+    gateway,
+    ruleFile: "unused",
+    policy,
+    execute: true,
+    stateFile,
+    receiptPath,
+    loadRules: async () => [rule],
+    loadEvidence: async () => evidence,
+    evaluate: async (trackedGateway: TradingGateway) => {
+      await trackedGateway.buy({} as TradePlan);
+      return decision;
+    },
+  };
+  await assert.rejects(runWatcherCycle(options), /watcher evaluation/);
+  await runWatcherCycle(options);
+  assert.equal(gateway.buyCalls, 1);
+  assert.equal(pendingWasDurable, true);
+  const persisted = JSON.parse(await readFile(stateFile, "utf8")) as { opportunities: Record<string, WatcherStateEntry> };
+  assert.equal(Object.values(persisted.opportunities)[0]?.status, "ambiguous");
+});
+
+test("records schema failures as terminal hash-linked ledger entries", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "settlement-edge-watcher-"));
+  const receiptPath = join(directory, "ledger.jsonl");
+  await assert.rejects(runWatcherCycle({
+    gateway: new FixtureGateway(),
+    ruleFile: "unused",
+    policy,
+    state: new Map(),
+    stateFile: false,
+    receiptPath,
+    loadRules: async () => [rule],
+    loadEvidence: async () => { throw new Error("Missing scalar at value"); },
+  }), /watcher evaluation/);
+  const entries = (await readFile(receiptPath, "utf8")).trim().split("\n").map((line) => JSON.parse(line) as {
+    previousHash: string;
+    record: { type: string; stage: string; terminal: boolean };
+  });
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0]?.previousHash, "GENESIS");
+  assert.equal(entries[0]?.record.type, "failure");
+  assert.equal(entries[0]?.record.stage, "schema");
+  assert.equal(entries[0]?.record.terminal, true);
 });

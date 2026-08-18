@@ -35,9 +35,32 @@ export interface EvidenceSignal {
   source: string;
   sourceUrl: string;
   observedAt: string;
+  publicationTime?: string;
+  fetchedAt?: string;
   probability: number;
   confidence: number;
   detail: string;
+}
+
+export type MarketLifecycleStatus = "open" | "awaiting_settlement" | "settled" | "expired" | "failed";
+
+export interface WalletBalanceSnapshot {
+  address: string;
+  ethWei: string;
+  collateralAtomic: string;
+  collateralDecimals: number;
+}
+
+export interface MarketSettlementSnapshot {
+  status: MarketLifecycleStatus;
+  winningOutcomeIdx: number | null;
+}
+
+export interface PositionSnapshot {
+  outcomeIdx: number;
+  sharesAtomic: string;
+  redeemedOrLiquidated: boolean;
+  tokensRedeemedAtomic: string;
 }
 
 export interface ResolutionRule {
@@ -102,4 +125,11 @@ export interface TradingGateway {
   listOpenMarkets(): Promise<MarketView[]>;
   quoteBuy(marketId: string, outcomeIdx: number, shares: number): Promise<Quote>;
   buy(plan: TradePlan): Promise<{ transactionHash: string }>;
+  getWalletSnapshot?(): Promise<WalletBalanceSnapshot>;
+}
+
+export interface ReconciliationGateway {
+  getWalletSnapshot?(): Promise<WalletBalanceSnapshot>;
+  getMarketSettlement?(marketId: string): Promise<MarketSettlementSnapshot>;
+  listWalletPositions?(marketId: string, walletAddress: string): Promise<PositionSnapshot[]>;
 }

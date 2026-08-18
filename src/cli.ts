@@ -1,11 +1,20 @@
 import "dotenv/config";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { loadRiskPolicy, liveTradingEnabled } from "./config.js";
 import { evaluateMarket } from "./engine.js";
 import { fetchEvidence } from "./evidence.js";
 import { DelphiGateway, ReplayGateway } from "./gateway.js";
+import { reconcileMarket } from "./reconciliation.js";
 import type { EvidenceSignal, MarketView, ResolutionRule } from "./types.js";
-import { DEFAULT_POLL_INTERVAL_MS, loadResolutionRules, runWatcher, type WatcherStatus } from "./watcher.js";
+import {
+  DEFAULT_POLL_INTERVAL_MS,
+  failedStage,
+  loadResolutionRules,
+  recordOpportunityFailure,
+  runWatcher,
+  type WatcherStatus,
+} from "./watcher.js";
 
 interface ReplayFixture { market: MarketView; outcomeIdx: number; evidence: EvidenceSignal[] }
 
@@ -33,9 +42,12 @@ async function replay(file: string) {
   fixture.evidence = fixture.evidence.map((item) => ({
     ...item,
     observedAt: item.observedAt === "NOW" ? new Date().toISOString() : item.observedAt,
+    publicationTime: item.publicationTime === "NOW" ? new Date().toISOString() : item.publicationTime,
   }));
   const gateway = new ReplayGateway([fixture.market]);
-  printDecision(await evaluateMarket(gateway, fixture.market, fixture.outcomeIdx, fixture.evidence, loadRiskPolicy(), false));
+  printDecision(await evaluateMarket(gateway, fixture.market, fixture.outcomeIdx, fixture.evidence, loadRiskPolicy(), false, {
+    receiptPath: process.env.SETTLEMENT_EDGE_RECEIPT_PATH,
+  }));
 }
 
 async function scan() {
@@ -60,6 +72,7 @@ async function run(ruleFile: string) {
     groups.set(key, [...(groups.get(key) ?? []), rule]);
   }
   const execute = liveTradingEnabled();
+  const receiptPath = process.env.SETTLEMENT_EDGE_RECEIPT_PATH;
   console.log(execute ? "LIVE EXECUTION ENABLED" : "DRY-RUN: no orders can be submitted");
   for (const groupedRules of groups.values()) {
     const first = groupedRules[0];
@@ -67,11 +80,29 @@ async function run(ruleFile: string) {
     const market = markets.find((candidate) => candidate.id.toLowerCase() === first.marketId.toLowerCase());
     if (!market) {
       console.error(`Skipping ${first.marketId}: open competition market not found`);
+      await recordOpportunityFailure(undefined, groupedRules, createHash("sha256").update(JSON.stringify(groupedRules)).digest("hex"), "open competition market not found", "market", receiptPath);
       continue;
     }
-    const evidence = await Promise.all(groupedRules.map((rule) => fetchEvidence(rule)));
-    printDecision(await evaluateMarket(gateway, market, first.outcomeIdx, evidence, loadRiskPolicy(), execute));
+    let evidence: EvidenceSignal[];
+    try {
+      evidence = await Promise.all(groupedRules.map((rule) => fetchEvidence(rule)));
+    } catch (error) {
+      const failure = error instanceof Error ? error : new Error(String(error));
+      const id = createHash("sha256").update(JSON.stringify({ marketId: market.id, groupedRules })).digest("hex");
+      await recordOpportunityFailure(market, groupedRules, id, failure.message, failedStage(failure), receiptPath);
+      console.error(`Skipping ${first.marketId}: ${failure.message}`);
+      continue;
+    }
+    const id = createHash("sha256").update(JSON.stringify({ market, groupedRules, evidence })).digest("hex");
+    printDecision(await evaluateMarket(gateway, market, first.outcomeIdx, evidence, loadRiskPolicy(), execute, { opportunityId: id, receiptPath }));
   }
+}
+
+async function reconcile(marketId: string, args: string[]) {
+  const ledgerPath = option(args, "--ledger") ?? process.env.SETTLEMENT_EDGE_RECEIPT_PATH;
+  const result = await reconcileMarket(new DelphiGateway(), marketId, ledgerPath);
+  console.log("SETTLEMENT EDGE RECONCILIATION");
+  console.log(JSON.stringify(result, null, 2));
 }
 
 const positiveOption = (name: string, value: string | undefined, fallback: number): number => {
@@ -118,6 +149,8 @@ async function watch(ruleFile: string, args: string[]) {
       intervalMs,
       retryBaseMs,
       retryMaxMs,
+      stateFile: process.env.SETTLEMENT_EDGE_WATCHER_STATE_PATH,
+      receiptPath: process.env.SETTLEMENT_EDGE_RECEIPT_PATH,
       signal: controller.signal,
       onDecision: printDecision,
       onStatus: printWatcherStatus,
@@ -140,6 +173,9 @@ if (command === "replay") {
   await run(argument ?? "config/resolution-rules.json");
 } else if (command === "watch") {
   await watch(argument ?? "config/resolution-rules.json", args);
+} else if (command === "reconcile") {
+  if (!argument) throw new Error("reconcile requires a market address");
+  await reconcile(argument, args);
 } else {
-  console.log("Settlement Edge\n\n  npm run demo                              Deterministic proof with no credentials\n  npm run scan                              Read live competition markets without trading\n  npm run agent -- <rules>                  Evaluate declared sources once; dry-run by default\n  npm run watch -- <rules> --interval-ms N  Poll declared sources continuously; defaults to 60000ms");
+  console.log("Settlement Edge\n\n  npm run demo                                      Deterministic proof with no credentials\n  npm run scan                                      Read live competition markets without trading\n  npm run agent -- <rules>                          Evaluate declared sources once; dry-run by default\n  npm run watch -- <rules> --interval-ms N          Poll declared sources continuously; defaults to 60000ms\n  npm run reconcile -- <market> [--ledger <path>]  Append read-only settlement and wallet reconciliation");
 }

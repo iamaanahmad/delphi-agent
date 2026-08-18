@@ -1,10 +1,106 @@
 import { createHash } from "node:crypto";
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import type { Decision } from "./types.js";
+import type {
+  Decision,
+  MarketSettlementSnapshot,
+  PositionSnapshot,
+  ResolutionRule,
+  RiskPolicy,
+  WalletBalanceSnapshot,
+} from "./types.js";
 
 const previousHashes = new Map<string, string>();
-const serialize = (value: unknown) => JSON.stringify(value, (_key, item) => typeof item === "bigint" ? item.toString() : item);
+export const DEFAULT_LEDGER_PATH = "artifacts/decision-receipts.jsonl";
+export const serializeLedgerValue = (value: unknown) => JSON.stringify(value, (_key, item) => typeof item === "bigint" ? item.toString() : item);
+
+export type Availability<T> =
+  | { available: true; value: T }
+  | { available: false; reason: string };
+
+export interface TransactionLedgerState {
+  status: "not_submitted" | "submitted" | "ambiguous";
+  transactionHash?: string;
+  error?: string;
+}
+
+export interface DecisionLedgerRecord {
+  type: "decision";
+  opportunityId: string;
+  terminal: true;
+  market: Decision["market"];
+  outcomeIdx: number;
+  sources: Array<{
+    id: string;
+    name: string;
+    url: string;
+    publicationTime: Availability<string>;
+    fetchTime: Availability<string>;
+    probability: number;
+    confidence: number;
+    detail: string;
+  }>;
+  marketProbability: Availability<number>;
+  estimate: Availability<NonNullable<Decision["estimate"]>>;
+  quote: Availability<{
+    shares: number;
+    costTst: number;
+    averagePrice: number;
+  }>;
+  impact: Availability<number>;
+  riskDecision: {
+    action: Decision["action"];
+    reason: string;
+    policy: RiskPolicy;
+  };
+  transaction: TransactionLedgerState;
+  wallet: {
+    before: Availability<WalletBalanceSnapshot>;
+    after: Availability<WalletBalanceSnapshot>;
+    changeTst: Availability<number>;
+  };
+}
+
+export interface FailureLedgerRecord {
+  type: "failure";
+  opportunityId: string;
+  terminal: true;
+  stage: "market" | "source" | "schema" | "transaction";
+  marketId: string;
+  outcomeIdx: number;
+  rules: ResolutionRule[];
+  reason: string;
+  marketProbability: Availability<number>;
+  riskDecision: { action: "skip"; reason: string };
+  transaction: TransactionLedgerState;
+}
+
+export interface ReconciliationLedgerRecord {
+  type: "reconciliation";
+  marketId: string;
+  wallet: {
+    current: Availability<WalletBalanceSnapshot>;
+    changeTst: Availability<number>;
+  };
+  settlement: Availability<MarketSettlementSnapshot>;
+  positions: Availability<PositionSnapshot[]>;
+  redemption: Availability<{
+    status: "redeemed" | "not_redeemed" | "no_position";
+    tokensRedeemedTst: number;
+  }>;
+  costBasisTst: Availability<number>;
+  realizedPnlTst: Availability<number>;
+}
+
+export type LedgerRecord = DecisionLedgerRecord | FailureLedgerRecord | ReconciliationLedgerRecord;
+
+export interface LedgerEnvelope {
+  version: 2;
+  timestamp: string;
+  previousHash: string;
+  record: LedgerRecord;
+  hash: string;
+}
 
 async function getPreviousHash(path: string): Promise<string> {
   const cached = previousHashes.get(path);
@@ -21,17 +117,49 @@ async function getPreviousHash(path: string): Promise<string> {
   }
 }
 
-export async function appendReceipt(decision: Decision, path = "artifacts/decision-receipts.jsonl") {
+export async function appendLedgerRecord(record: LedgerRecord, path = DEFAULT_LEDGER_PATH, timestamp = new Date()) {
   const previousHash = await getPreviousHash(path);
   const body = {
-    version: 1,
-    timestamp: new Date().toISOString(),
+    version: 2 as const,
+    timestamp: timestamp.toISOString(),
     previousHash,
-    decision,
+    record,
   };
-  const hash = createHash("sha256").update(serialize(body)).digest("hex");
+  const hash = createHash("sha256").update(serializeLedgerValue(body)).digest("hex");
   await mkdir(dirname(path), { recursive: true });
-  await appendFile(path, `${serialize({ ...body, hash })}\n`, "utf8");
+  await appendFile(path, `${serializeLedgerValue({ ...body, hash })}\n`, "utf8");
   previousHashes.set(path, hash);
   return hash;
+}
+
+export async function readLedger(path = DEFAULT_LEDGER_PATH): Promise<Array<LedgerEnvelope | Record<string, unknown>>> {
+  try {
+    const content = (await readFile(path, "utf8")).trim();
+    return content ? content.split("\n").map((line) => JSON.parse(line) as LedgerEnvelope | Record<string, unknown>) : [];
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  }
+}
+
+// Compatibility entry point for callers that still produce the original v1 decision receipt.
+export async function appendReceipt(decision: Decision, path = DEFAULT_LEDGER_PATH) {
+  const previousHash = await getPreviousHash(path);
+  const body = { version: 1, timestamp: new Date().toISOString(), previousHash, decision };
+  const hash = createHash("sha256").update(serializeLedgerValue(body)).digest("hex");
+  await mkdir(dirname(path), { recursive: true });
+  await appendFile(path, `${serializeLedgerValue({ ...body, hash })}\n`, "utf8");
+  previousHashes.set(path, hash);
+  return hash;
+}
+
+export const available = <T>(value: T): Availability<T> => ({ available: true, value });
+export const unavailable = <T>(reason: string): Availability<T> => ({ available: false, reason });
+
+export function walletChange(before: Availability<WalletBalanceSnapshot>, after: Availability<WalletBalanceSnapshot>): Availability<number> {
+  if (!before.available) return unavailable(before.reason);
+  if (!after.available) return unavailable(after.reason);
+  if (before.value.collateralDecimals !== after.value.collateralDecimals) return unavailable("wallet balance decimals changed");
+  const scale = 10 ** before.value.collateralDecimals;
+  return available(Number(BigInt(after.value.collateralAtomic) - BigInt(before.value.collateralAtomic)) / scale);
 }
