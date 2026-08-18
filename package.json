@@ -13,6 +13,7 @@
     "demo": "tsx src/cli.ts replay fixtures/wikipedia-threshold.json",
     "scan": "tsx src/cli.ts scan",
     "agent": "tsx src/cli.ts run",
+    "watch": "tsx src/cli.ts watch",
     "test": "tsx --test tests/**/*.test.ts",
     "validate:submission": "node scripts/validate-submission.mjs"
   },
