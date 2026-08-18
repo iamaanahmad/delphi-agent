@@ -23,15 +23,19 @@ const rule: ResolutionRule = {
   jsonPath: "value",
   comparator: "gte",
   threshold: 100,
+  eventAtPath: "event_at",
+  freshness: { type: "retrieval" },
 };
 const evidence: EvidenceSignal = {
   id: "primary",
   source: "Primary API",
   sourceUrl: rule.sourceUrl,
-  observedAt: "2026-08-18T00:00:00.000Z",
+  eventTime: "2026-08-18T00:00:00.000Z",
+  freshnessTime: "2026-08-18T00:00:00.000Z",
+  freshnessType: "retrieval",
   probability: 0.995,
   confidence: 0.98,
-  detail: "101 gte 100; age 0.0m",
+  detail: "101 gte 100; freshness age 0.0m",
 };
 const policy: RiskPolicy = {
   bankrollTst: 100,

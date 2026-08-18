@@ -19,7 +19,11 @@ function opportunityId(market: MarketView, outcomeIdx: number, evidence: Evidenc
   const content = JSON.stringify({
     marketId: market.id.toLowerCase(),
     outcomeIdx,
-    evidence: evidence.map((item) => ({ id: item.id, observedAt: item.observedAt, publicationTime: item.publicationTime, fetchedAt: item.fetchedAt })),
+    evidence: evidence.map((item) => ({
+      id: item.id,
+      eventTime: item.eventTime,
+      publicationTime: item.publicationTime,
+    })),
   });
   return createHash("sha256").update(content).digest("hex");
 }
@@ -85,7 +89,7 @@ export async function evaluateMarket(
   if (marketProbability === undefined) return record({ action: "skip", reason: "market probability is unavailable", market, evidence }, outcomeIdx, policy, gateway, context);
   const now = Date.now();
   const freshEvidence = evidence.filter((signal) => {
-    const ageMinutes = (now - new Date(signal.observedAt).getTime()) / 60_000;
+    const ageMinutes = (now - new Date(signal.freshnessTime).getTime()) / 60_000;
     return ageMinutes >= 0 && ageMinutes <= policy.maxSourceAgeMinutes && signal.confidence > 0;
   });
   if (freshEvidence.length === 0) return record({ action: "skip", reason: "no fresh evidence", market, evidence }, outcomeIdx, policy, gateway, context);

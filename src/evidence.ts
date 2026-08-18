@@ -55,7 +55,7 @@ function thresholdAt(payload: unknown, threshold: RuleThreshold): number | strin
   return typeof threshold === "object" ? scalarAt(payload, threshold.jsonPath) : threshold;
 }
 
-function aggregate(rule: ResolutionRule, payload: unknown): { actual: number; observedAt: Date; count: number } {
+function aggregate(rule: ResolutionRule, payload: unknown): { actual: number; eventTime: Date; count: number } {
   const config = rule.aggregation;
   if (!config) throw new Error("Missing aggregation configuration");
   const records = readPath(payload, config.recordsPath);
@@ -64,69 +64,77 @@ function aggregate(rule: ResolutionRule, payload: unknown): { actual: number; ob
   const end = parseTimestamp(config.windowEnd);
   if (end < start) throw new Error("Aggregation window ends before it starts");
 
-  const selected: Array<{ value: number; observedAt: Date }> = [];
+  const selected: Array<{ value: number; eventTime: Date }> = [];
   for (const record of records) {
-    const timestampValue = readPath(record, config.observedAtPath);
-    if (timestampValue === undefined) throw new Error(`Missing scalar at ${config.observedAtPath}`);
-    const observedAt = parseTimestamp(timestampValue, config.observedAtFormat);
-    if (observedAt < start || observedAt > end) continue;
+    const timestampValue = readPath(record, config.eventAtPath);
+    if (timestampValue === undefined) throw new Error(`Missing scalar at ${config.eventAtPath}`);
+    const eventTime = parseTimestamp(timestampValue, config.eventAtFormat);
+    if (eventTime < start || eventTime > end) continue;
     const raw = readPath(record, config.valuePath);
     if (raw === "" || raw === null) continue;
     if (typeof raw !== "number" && typeof raw !== "string") throw new Error(`Missing scalar at ${config.valuePath}`);
     const value = Number(raw);
     if (!Number.isFinite(value)) throw new Error(`Expected numeric source value, received ${String(raw)}`);
-    selected.push({ value, observedAt });
+    selected.push({ value, eventTime });
   }
   if (selected.length === 0) throw new Error(`No numeric observations in ${config.windowStart}..${config.windowEnd}`);
   return {
     actual: Math.max(...selected.map((item) => item.value)),
-    observedAt: new Date(Math.max(...selected.map((item) => item.observedAt.getTime()))),
+    eventTime: new Date(Math.max(...selected.map((item) => item.eventTime.getTime()))),
     count: selected.length,
   };
 }
 
 export function extractEvidence(rule: ResolutionRule, payload: unknown, now = new Date()): EvidenceSignal {
   let actual: number | string;
-  let observedAt: Date;
+  let eventTime: Date;
   let aggregationDetail = "";
   let publicationTime: string | undefined;
 
   if (rule.aggregation) {
     const result = aggregate(rule, payload);
     actual = result.actual;
-    observedAt = result.observedAt;
-    publicationTime = observedAt.toISOString();
+    eventTime = result.eventTime;
     aggregationDetail = ` from ${result.count} observations`;
   } else {
     if (!rule.jsonPath) throw new Error("Scalar rule requires jsonPath");
     actual = scalarAt(payload, rule.jsonPath);
-    const observedAtValue = rule.observedAtPath ? scalarAt(payload, rule.observedAtPath) : now.toISOString();
-    observedAt = parseTimestamp(observedAtValue, rule.observedAtFormat);
-    if (rule.observedAtPath) publicationTime = observedAt.toISOString();
+    if (!rule.eventAtPath) throw new Error("Scalar rule requires eventAtPath");
+    eventTime = parseTimestamp(scalarAt(payload, rule.eventAtPath), rule.eventAtFormat);
+  }
+
+  let freshnessTime: Date;
+  if (rule.freshness.type === "publication") {
+    freshnessTime = parseTimestamp(scalarAt(payload, rule.freshness.path), rule.freshness.format);
+    publicationTime = freshnessTime.toISOString();
+  } else {
+    freshnessTime = now;
   }
 
   const conditionsMet = (rule.conditions ?? []).every((condition) =>
     compare(scalarAt(payload, condition.jsonPath), condition.comparator, condition.threshold),
   );
   const threshold = thresholdAt(payload, rule.threshold);
-  const ageMinutes = Math.max(0, (now.getTime() - observedAt.getTime()) / 60_000);
-  const fresh = ageMinutes <= (rule.maxAgeMinutes ?? 15);
+  const ageMinutes = (now.getTime() - freshnessTime.getTime()) / 60_000;
+  const fresh = ageMinutes >= 0 && ageMinutes <= (rule.maxFreshnessAgeMinutes ?? 15);
   const outcomeTrue = compare(actual, rule.comparator, threshold);
   return {
     id: `${rule.marketId}:${rule.outcomeIdx}:${rule.sourceName}`,
     source: rule.sourceName,
     sourceUrl: rule.sourceUrl,
-    observedAt: observedAt.toISOString(),
+    eventTime: eventTime.toISOString(),
+    freshnessTime: freshnessTime.toISOString(),
+    freshnessType: rule.freshness.type,
     publicationTime,
     probability: conditionsMet ? (outcomeTrue ? 0.995 : 0.005) : 0.5,
     confidence: conditionsMet && fresh ? 0.98 : 0,
     detail: conditionsMet
-      ? `${String(actual)} ${rule.comparator} ${String(threshold)}${aggregationDetail}; age ${ageMinutes.toFixed(1)}m`
-      : `required source condition not met; age ${ageMinutes.toFixed(1)}m`,
+      ? `${String(actual)} ${rule.comparator} ${String(threshold)}${aggregationDetail}; freshness age ${ageMinutes.toFixed(1)}m`
+      : `required source condition not met; freshness age ${ageMinutes.toFixed(1)}m`,
   };
 }
 
-export async function fetchEvidence(rule: ResolutionRule, now = new Date()): Promise<EvidenceSignal> {
+export async function fetchEvidence(rule: ResolutionRule, retrievedAt?: Date): Promise<EvidenceSignal> {
   const response = await fetch(rule.sourceUrl, {
     headers: { accept: "application/json", "user-agent": "settlement-edge/1.0" },
     signal: AbortSignal.timeout(10_000),
@@ -138,5 +146,7 @@ export async function fetchEvidence(rule: ResolutionRule, now = new Date()): Pro
   } catch {
     throw new Error(`${rule.sourceName} returned invalid JSON`);
   }
-  return { ...extractEvidence(rule, payload, now), fetchedAt: new Date().toISOString() };
+  const fetchTime = retrievedAt ?? new Date();
+  const fetchedAt = fetchTime.toISOString();
+  return { ...extractEvidence(rule, payload, fetchTime), fetchedAt };
 }

@@ -6,7 +6,7 @@ Settlement Edge must fail closed. A missing source, stale timestamp, malformed v
 
 ## Components
 
-1. `evidence.ts` reads a declared scalar from an HTTPS JSON response, validates its timestamp, and evaluates the exact settlement comparator.
+1. `evidence.ts` reads a declared scalar from an HTTPS JSON response, records the event time separately from publication or retrieval freshness, and evaluates the exact settlement comparator.
 2. `strategy.ts` combines one or more probability signals. It penalizes disagreement and shrinks the result back toward the market's probability.
 3. `gateway.ts` isolates the official SDK. The live implementation speaks to `competition-testnet`; the replay implementation models shallow price impact deterministically.
 4. `engine.ts` filters stale evidence, rejects disagreement, sizes a trade, and optionally executes it.
@@ -24,7 +24,8 @@ The agent therefore treats `probability - price` as edge. It still sizes against
 
 ## Trust boundaries
 
-- Primary-source payloads are untrusted until their HTTP status, extraction path, scalar type, timestamp, and comparator pass.
+- Primary-source payloads are untrusted until their HTTP status, extraction path, scalar type, event timestamp, explicit freshness signal, and comparator pass.
+- Freshness is declared per rule as either a source publication timestamp or the locally observed HTTPS retrieval time. Missing or malformed publication metadata and future freshness timestamps fail closed.
 - Market metadata is untrusted until the question, outcomes, probabilities, and prices are present.
 - Quotes are authoritative for cost, but a slippage ceiling limits the submitted transaction.
 - Credentials stay in `.env`; the agent never reads or prints secret values itself.

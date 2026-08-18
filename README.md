@@ -82,7 +82,7 @@ This is competition testnet software using play-money TST, not financial advice 
 
 ## Key features
 
-- Primary-source JSON extraction with exact settlement comparators, source timestamp formats, and bounded maximum-over-window rules.
+- Primary-source JSON extraction with exact settlement comparators, separate event and freshness timestamps, and bounded maximum-over-window rules.
 - Conservative probability estimates that penalize stale or conflicting evidence.
 - Quote-aware size search designed for shallow competition LMSR curves.
 - Two-switch execution authorization and dry-run defaults.

@@ -86,7 +86,7 @@ function evidenceState(signal: EvidenceSignal) {
     sourceUrl: signal.sourceUrl,
     probability: signal.probability,
     confidence: signal.confidence,
-    detail: signal.detail.replace(/; age [\d.]+m$/, ""),
+    detail: signal.detail.replace(/; freshness age [\d.]+m$/, ""),
   };
 }
 
