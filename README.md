@@ -1,8 +1,12 @@
 # Settlement Edge
 
-Settlement Edge is an autonomous trading agent for the [Gensyn Delphi Agent Arena](https://dorahacks.io/hackathon/delphi-agent-competition/detail). It turns verifiable facts from primary data sources into quote-aware prediction-market trades, with every decision preserved as a tamper-evident receipt.
+Settlement Edge is an autonomous trading agent for the [Gensyn Delphi Agent Arena](https://dorahacks.io/hackathon/delphi-agent-competition/detail). It turns verifiable facts from reviewed primary data sources into quote-aware dry-run decisions and, after every live gate passes, competition-testnet trades. Each evaluation is preserved as a tamper-evident receipt.
 
-> Fresh fact → conservative probability → live LMSR quote → risk gate → trade receipt
+> Fresh fact → conservative probability → LMSR quote → risk gate → decision receipt
+
+## Observed status
+
+The credential-free decision journey is proven locally. **No live order, settlement, redemption, or realized competition P&L has been observed for Settlement Edge yet.** The replay below is simulation, not leaderboard performance.
 
 ## Tagline
 
@@ -12,19 +16,19 @@ Trade the fact before the market prices it.
 
 The competition ranks agents by final P&L. Most agents can form an opinion; the hard part is finding an opinion the market has not priced yet and converting it into profit without saturating a shallow LMSR curve.
 
-Settlement Edge targets markets with objective, machine-readable resolution sources such as Wikimedia, NOAA, FRED, Treasury, and official carbon-intensity feeds. It waits for high-confidence evidence, subtracts disagreement and staleness, requests the real execution quote, and buys only when the edge survives price impact and portfolio limits.
+Settlement Edge currently has reviewed mappings for Wikimedia pageviews, NOAA water levels, and an MLS match feed. It waits for high-confidence evidence, subtracts disagreement and staleness, requests an execution quote when Delphi API access is configured, and permits a buy only when the edge survives price impact and portfolio limits.
 
 ## Solution
 
-Settlement Edge maps each objective market to its exact primary source and settlement threshold. The agent converts verified observations into conservative probabilities, tests several tiny sizes against live quotes, and either submits the best risk-adjusted trade or records why it refused.
+Settlement Edge maps each reviewed market to its exact primary source and settlement threshold. The agent converts validated observations into conservative probabilities, tests several tiny sizes against quotes, and either records a dry-run plan or, when every live gate passes, submits the best risk-adjusted trade.
 
 ## Innovation
 
-The agent is built around settlement evidence, not free-form prediction. Its advantage is the short window between an official source publishing the resolving fact and the LMSR market absorbing it. A reviewed resolution rule prevents a model from silently changing the source, threshold, or outcome.
+The agent is built around settlement evidence, not free-form prediction. Its strategy targets the short window between an official source publishing the resolving fact and the LMSR market absorbing it. Whether that window creates a live edge is not yet proven. A reviewed resolution rule prevents the agent from silently changing the source, threshold, or outcome.
 
 ## Sponsor technology
 
-The official `@gensyn-ai/gensyn-delphi-sdk` is the execution backbone, not a decorative API call. It discovers the active competition's markets, reads implied probabilities, obtains exact LMSR buy quotes, manages gateway approval, and submits TST trades on `competition-testnet`.
+The official `@gensyn-ai/gensyn-delphi-sdk` is the execution backbone. The wired gateway discovers competition markets, reads implied probabilities, obtains LMSR buy quotes, manages gateway approval, and can submit TST trades on `competition-testnet`. Market access and order submission remain credential-gated and have not been observed live for Settlement Edge.
 
 ## Architecture
 
@@ -50,7 +54,7 @@ Risk policy ──────────────── edge, spend, impact
         └── BUY + hash-linked decision receipt
 ```
 
-The live gateway uses `@gensyn-ai/gensyn-delphi-sdk@>=2.1.0` on `competition-testnet`. Winning shares pay exactly 1 TST, so the core expected-value calculation is transparent:
+The live gateway uses `@gensyn-ai/gensyn-delphi-sdk@^2.1.0` on `competition-testnet`. Winning shares pay exactly 1 TST, so the core expected-value calculation is transparent:
 
 ```text
 expected profit = (our conservative probability - quoted average price) × shares
@@ -86,7 +90,7 @@ This is competition testnet software using play-money TST, not financial advice 
 - Conservative probability estimates that penalize stale or conflicting evidence.
 - Quote-aware size search designed for shallow competition LMSR curves.
 - Two-switch execution authorization and dry-run defaults.
-- Hash-linked lifecycle records for trades, refusals, failures, wallet changes, settlement, redemption, and realized P&L.
+- A hash-linked lifecycle ledger that can record trades, refusals, failures, wallet changes, settlement, redemption, and realized P&L. The full lifecycle is proven with fixtures, not a live order.
 - Persistent duplicate and ambiguous-order protection across watcher restarts.
 - Read-only reconciliation that reports unsupported or unavailable SDK fields explicitly.
 - Deterministic replay with no API, wallet, gas, or network dependency.
@@ -101,19 +105,20 @@ npm run check
 npm run demo
 ```
 
-The deterministic demo needs no credentials and prints the complete decision trace:
+The deterministic demo needs no credentials and prints the complete decision trace. **Its 2.5200 TST cost and 1.4292 TST expected P&L are simulated. No order is submitted, and neither number is realized competition profit.**
 
 ```text
 SETTLEMENT EDGE DECISION RECEIPT
 ────────────────────────────────
+Mode:        SIMULATED REPLAY (no live order or realized P&L)
 Market:      Will the featured Wikipedia article exceed 100,000 views by settlement?
-Evidence:    Wikimedia Pageviews API: 102,431 verified views; settlement threshold crossed
+Evidence:    Wikimedia Pageviews API: fixture value: 102,431 views; simulated threshold crossed
 Our view:    98.7% (98.0% confidence)
 Market view: 61.0%
 Edge:        +37.7%
 Quote:       4 shares for 2.5200 TST
 Impact:      2.0%
-Expected P&L:1.4292 TST
+Expected P&L:1.4292 TST (not realized)
 Action:      BUY (risk gates passed; dry-run only)
 ```
 
@@ -167,7 +172,7 @@ See [demo-script.md](docs/demo-script.md) for the 90-second judge walkthrough.
 
 ## Demo instructions
 
-Run `npm run demo`. The fixture reproduces a market at 61% after Wikimedia has already reported that its 100,000-view threshold was crossed. The agent shows a conservative 98.7% view, searches the shallow curve, and returns a 4-share dry-run plan with positive expected P&L.
+Run `npm run demo`. The fixture supplies a 61% market and a simulated Wikimedia value above a 100,000-view threshold. The agent shows a conservative 98.7% view, searches the simulated shallow curve, and returns a four-share dry-run plan. The 2.5200 TST cost and 1.4292 TST expected P&L are simulated, not realized competition results.
 
 ## Screenshots
 
@@ -186,14 +191,14 @@ Run `npm run demo`. The fixture reproduces a market at 61% after Wikimedia has a
 - [x] Stale-data, disagreement, low-edge, and quote-failure stops
 - [x] Hash-linked decision receipts
 - [x] Restart-safe duplicate and ambiguous-order state
-- [x] Read-only settlement, redemption, wallet, and realized-P&L reconciliation
+- [x] Read-only settlement, redemption, wallet, and realized-P&L reconciliation in code and fixtures
 - [x] Type checking, unit tests, and GitHub Actions
 - [ ] Register the trading wallet on DoraHacks
 - [ ] Add the testnet Delphi API key and signer only to local `.env`
-- [ ] Confirm the organizer's unpublished minimum activity threshold
-- [ ] Run the live agent before the earlier August 23 deadline interpretation
+- [ ] Confirm any numeric minimum activity requirement the organizer publishes
+- [ ] Run one tiny order only after the live preflight passes
 
-The build intentionally optimizes one contest-winning loop instead of presenting a broad trading dashboard. The next live milestone is a registered wallet completing one tiny, verified order and appearing on the [leaderboard](https://agent-competition.gensyn.ai).
+The build intentionally optimizes one contest-winning loop instead of presenting a broad trading dashboard. The next live milestone is a registered wallet completing one tiny, verified order and appearing on the [competition leaderboard](https://competition.delphi.fyi/).
 
 ## Technical challenges
 
@@ -215,6 +220,8 @@ The same evidence-to-action design can make autonomous agents more accountable b
 ## Team information
 
 Built by [iamaanahmad](https://github.com/iamaanahmad) for the Delphi Agent Arena Competition.
+
+Project contact: [dorahacks@mail.tin.computer](mailto:dorahacks@mail.tin.computer)
 
 ## Repository map
 

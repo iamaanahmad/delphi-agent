@@ -1,14 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title description">
-  <title id="title">Settlement Edge decision receipt</title>
-  <description id="description">A terminal-style receipt showing verified Wikimedia evidence, a 37.7 percent edge, a risk-limited quote, and a dry-run buy.</description>
+  <title id="title">Settlement Edge simulated decision receipt</title>
+  <description id="description">A simulated terminal-style receipt showing fixture-based Wikimedia evidence, a 37.7 percent edge, a risk-limited quote, and a dry-run buy. No live order or realized profit is shown.</description>
   <rect width="1200" height="700" rx="28" fill="#0b1020"/>
   <rect x="32" y="32" width="1136" height="636" rx="18" fill="#11182b" stroke="#29344f" stroke-width="2"/>
   <circle cx="72" cy="72" r="9" fill="#ff6b6b"/><circle cx="102" cy="72" r="9" fill="#ffd166"/><circle cx="132" cy="72" r="9" fill="#66dc9d"/>
-  <text x="72" y="132" fill="#66dc9d" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="28" font-weight="700">SETTLEMENT EDGE DECISION RECEIPT</text>
+  <text x="72" y="122" fill="#66dc9d" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="28" font-weight="700">SETTLEMENT EDGE DECISION RECEIPT</text>
+  <text x="72" y="153" fill="#ffd166" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" font-weight="700">SIMULATED REPLAY · NO LIVE ORDER · NO REALIZED P&amp;L</text>
   <text x="72" y="185" fill="#aab6d3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">Market</text>
   <text x="250" y="185" fill="#f3f6ff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">Wikipedia article exceeds 100,000 views?</text>
   <text x="72" y="235" fill="#aab6d3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">Evidence</text>
-  <text x="250" y="235" fill="#f3f6ff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">Wikimedia API: 102,431 verified views</text>
+  <text x="250" y="235" fill="#f3f6ff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">Wikimedia fixture: 102,431 simulated views</text>
   <text x="72" y="285" fill="#aab6d3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">Our view</text>
   <text x="250" y="285" fill="#f3f6ff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">98.7%  ·  98.0% confidence</text>
   <text x="72" y="335" fill="#aab6d3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">Market</text>
@@ -18,7 +19,7 @@
   <text x="72" y="435" fill="#aab6d3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">Quote</text>
   <text x="250" y="435" fill="#f3f6ff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">4 shares  ·  2.5200 TST  ·  2.0% impact</text>
   <text x="72" y="485" fill="#aab6d3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">Expected P&amp;L</text>
-  <text x="250" y="485" fill="#66dc9d" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" font-weight="700">+1.4292 TST</text>
+  <text x="250" y="485" fill="#66dc9d" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" font-weight="700">+1.4292 TST expected · simulated</text>
   <rect x="72" y="535" width="1056" height="82" rx="12" fill="#172c28" stroke="#66dc9d"/>
   <text x="100" y="586" fill="#66dc9d" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="26" font-weight="700">BUY · risk gates passed · dry-run only</text>
 </svg>

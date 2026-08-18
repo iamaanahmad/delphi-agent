@@ -32,3 +32,14 @@ test("one-shot evaluation reports the same credential gate", async () => {
   assert.match(result.stderr, /Settlement Edge stopped: Requires apiKey/);
   assert.doesNotMatch(result.stderr, /at DelphiClient/);
 });
+
+test("deterministic replay labels simulated cost and P&L", async () => {
+  const result = await run(process.execPath, ["--import", "tsx", "src/cli.ts", "replay", "fixtures/wikipedia-threshold.json"], {
+    cwd: process.cwd(),
+    env: process.env,
+  });
+  assert.match(result.stdout, /SIMULATED REPLAY \(no live order or realized P&L\)/);
+  assert.match(result.stdout, /4 shares for 2\.5200 TST/);
+  assert.match(result.stdout, /Expected P&L:1\.4292 TST \(not realized\)/);
+  assert.match(result.stdout, /dry-run only/);
+});

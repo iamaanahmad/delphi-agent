@@ -20,9 +20,10 @@ interface ReplayFixture { market: MarketView; outcomeIdx: number; evidence: Evid
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 
-function printDecision(decision: Awaited<ReturnType<typeof evaluateMarket>>) {
+function printDecision(decision: Awaited<ReturnType<typeof evaluateMarket>>, mode?: "simulated-replay") {
   console.log("\nSETTLEMENT EDGE DECISION RECEIPT");
   console.log("────────────────────────────────");
+  if (mode === "simulated-replay") console.log("Mode:        SIMULATED REPLAY (no live order or realized P&L)");
   console.log(`Market:      ${decision.market.question}`);
   console.log(`Evidence:    ${decision.evidence.map((item) => `${item.source}: ${item.detail}`).join(" | ")}`);
   if (decision.estimate) console.log(`Our view:    ${pct(decision.estimate.probability)} (${pct(decision.estimate.confidence)} confidence)`);
@@ -31,7 +32,7 @@ function printDecision(decision: Awaited<ReturnType<typeof evaluateMarket>>) {
     console.log(`Edge:        +${pct(decision.plan.edge)}`);
     console.log(`Quote:       ${decision.plan.shares} shares for ${decision.plan.costTst.toFixed(4)} TST`);
     console.log(`Impact:      ${pct(decision.plan.priceImpact)}`);
-    console.log(`Expected P&L:${decision.plan.expectedProfitTst.toFixed(4)} TST`);
+    console.log(`Expected P&L:${decision.plan.expectedProfitTst.toFixed(4)} TST (not realized)`);
   }
   console.log(`Action:      ${decision.action.toUpperCase()} (${decision.reason})`);
   if (decision.transactionHash) console.log(`Transaction: ${decision.transactionHash}`);
@@ -48,7 +49,7 @@ async function replay(file: string) {
   const gateway = new ReplayGateway([fixture.market]);
   printDecision(await evaluateMarket(gateway, fixture.market, fixture.outcomeIdx, fixture.evidence, loadRiskPolicy(), false, {
     receiptPath: process.env.SETTLEMENT_EDGE_RECEIPT_PATH,
-  }));
+  }), "simulated-replay");
 }
 
 async function scan() {
