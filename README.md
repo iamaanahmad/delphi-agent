@@ -81,7 +81,7 @@ This is competition testnet software using play-money TST, not financial advice 
 
 ## Key features
 
-- Primary-source JSON extraction with exact settlement comparators.
+- Primary-source JSON extraction with exact settlement comparators, source timestamp formats, and bounded maximum-over-window rules.
 - Conservative probability estimates that penalize stale or conflicting evidence.
 - Quote-aware size search designed for shallow competition LMSR curves.
 - Two-switch execution authorization and dry-run defaults.
@@ -130,6 +130,8 @@ npm run agent -- config/resolution-rules.json
 
 That command fetches the declared primary source, evaluates freshness, joins the open market, requests quotes, and prints a dry-run decision. It submits only when both live switches in `.env` are set to `true`.
 
+The repository includes three reviewed competition mappings for Wikimedia, NOAA, and MLS in `config/resolution-rules.json`. Their exact settlement boundaries and source paths are recorded in [live-market-rules.md](docs/live-market-rules.md). Reviewed means the source mapping was checked; it does not mean a trade will have positive expected value.
+
 For continuous monitoring, run the watcher. It reloads the rule file, open markets, and evidence every 60 seconds by default:
 
 ```bash
@@ -159,6 +161,7 @@ Run `npm run demo`. The fixture reproduces a market at 61% after Wikimedia has a
 - [x] Explicit two-switch live-order gate
 - [x] Deterministic credential-free replay
 - [x] Continuous 60-second watcher with retry, shutdown, and duplicate-order protection
+- [x] Three reviewed live-market mappings with offline source fixtures
 - [x] Stale-data, disagreement, low-edge, and quote-failure stops
 - [x] Hash-linked decision receipts
 - [x] Type checking, unit tests, and GitHub Actions
@@ -178,7 +181,7 @@ Shallow liquidity can make even modest orders move the curve or revert. Rather t
 ## Future roadmap
 
 1. Register the exact signer wallet and verify leaderboard inclusion with a tiny trade.
-2. Add reviewed NOAA, FRED, Treasury, and UK carbon-intensity rule packs for live markets.
+2. Expand reviewed rule coverage as new objective JSON-backed markets open.
 3. Add portfolio-aware exits, settlement redemption, failed-market liquidation, and P&L reconciliation.
 4. Confirm and encode the organizer's unpublished trade and market activity thresholds.
 

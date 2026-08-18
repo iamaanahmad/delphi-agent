@@ -1,4 +1,23 @@
 export type Comparator = "gt" | "gte" | "lt" | "lte" | "eq";
+export type TimestampFormat = "iso" | "wikimedia-hour" | "noaa-gmt-minute";
+
+export type RuleThreshold = number | string | { jsonPath: string };
+
+export interface RuleCondition {
+  jsonPath: string;
+  comparator: Comparator;
+  threshold: number | string;
+}
+
+export interface RuleAggregation {
+  recordsPath: string;
+  valuePath: string;
+  observedAtPath: string;
+  observedAtFormat?: TimestampFormat;
+  reducer: "max";
+  windowStart: string;
+  windowEnd: string;
+}
 
 export interface MarketView {
   id: string;
@@ -26,10 +45,13 @@ export interface ResolutionRule {
   outcomeIdx: number;
   sourceName: string;
   sourceUrl: string;
-  jsonPath: string;
+  jsonPath?: string;
   comparator: Comparator;
-  threshold: number | string;
+  threshold: RuleThreshold;
   observedAtPath?: string;
+  observedAtFormat?: TimestampFormat;
+  aggregation?: RuleAggregation;
+  conditions?: RuleCondition[];
   maxAgeMinutes?: number;
 }
 

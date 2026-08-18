@@ -1,0 +1,23 @@
+{
+  "wikimedia": {
+    "items": [{ "article": "Chess", "views": 2250, "timestamp": "2026081800" }]
+  },
+  "noaa": {
+    "metadata": { "id": "8518750", "name": "The Battery" },
+    "data": [
+      { "t": "2026-08-20 18:00", "v": "5.100", "q": "p" },
+      { "t": "2026-08-20 23:54", "v": "5.180", "q": "p" }
+    ]
+  },
+  "mls": {
+    "match_information": {
+      "match_id": "MLS-MAT-0009J5",
+      "home_team_name": "Sporting Kansas City",
+      "away_team_name": "St. Louis CITY SC",
+      "home_team_goals": 1,
+      "away_team_goals": 1,
+      "kickoff_time": "2026-08-20T00:00:00Z",
+      "match_status": "finalWhistle"
+    }
+  }
+}

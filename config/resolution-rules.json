@@ -1,0 +1,53 @@
+[
+  {
+    "marketId": "0x7fb6eb62585de2fde740bfe4b4bae0c279919021",
+    "outcomeIdx": 0,
+    "sourceName": "Wikimedia Pageviews API",
+    "sourceUrl": "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/Chess/daily/20260818/20260818",
+    "jsonPath": "items.0.views",
+    "comparator": "gt",
+    "threshold": 2250,
+    "observedAtPath": "items.0.timestamp",
+    "observedAtFormat": "wikimedia-hour",
+    "maxAgeMinutes": 1440
+  },
+  {
+    "marketId": "0x360274d153c58566943cb21088dd95e45638bda3",
+    "outcomeIdx": 0,
+    "sourceName": "NOAA CO-OPS Water Levels",
+    "sourceUrl": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&application=delphi&begin_date=20260820&end_date=20260820&datum=MLLW&station=8518750&time_zone=gmt&units=english&format=json",
+    "comparator": "gt",
+    "threshold": 5.18,
+    "aggregation": {
+      "recordsPath": "data",
+      "valuePath": "v",
+      "observedAtPath": "t",
+      "observedAtFormat": "noaa-gmt-minute",
+      "reducer": "max",
+      "windowStart": "2026-08-20T18:00:00Z",
+      "windowEnd": "2026-08-20T23:54:00Z"
+    },
+    "maxAgeMinutes": 30
+  },
+  {
+    "marketId": "0xbf1ce7c9d751b92bfac4acefe0e87d82b1d30163",
+    "outcomeIdx": 0,
+    "sourceName": "MLS Stats API",
+    "sourceUrl": "https://stats-api.mlssoccer.com/matches/MLS-MAT-0009J5",
+    "jsonPath": "match_information.home_team_goals",
+    "comparator": "gt",
+    "threshold": {
+      "jsonPath": "match_information.away_team_goals"
+    },
+    "observedAtPath": "match_information.kickoff_time",
+    "observedAtFormat": "iso",
+    "conditions": [
+      {
+        "jsonPath": "match_information.match_status",
+        "comparator": "eq",
+        "threshold": "finalWhistle"
+      }
+    ],
+    "maxAgeMinutes": 240
+  }
+]
