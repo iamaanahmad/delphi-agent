@@ -6,6 +6,55 @@ import type {
   TimestampFormat,
 } from "./types.js";
 
+const MONTHS = new Map([
+  ["january", 0], ["february", 1], ["march", 2], ["april", 3],
+  ["may", 4], ["june", 5], ["july", 6], ["august", 7],
+  ["september", 8], ["october", 9], ["november", 10], ["december", 11],
+]);
+
+function htmlText(input: string): string {
+  return input
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&#(\d+);/g, (_match, code: string) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_match, code: string) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;|&#39;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function updatedDate(value: string): string | undefined {
+  const match = /^Updated\s+(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/i.exec(value);
+  if (!match) return undefined;
+  const month = MONTHS.get(match[2]!.toLowerCase());
+  const day = Number(match[1]);
+  const year = Number(match[3]);
+  if (month === undefined || !Number.isInteger(day) || day < 1 || day > 31) return undefined;
+  const date = new Date(Date.UTC(year, month, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month || date.getUTCDate() !== day) return undefined;
+  return date.toISOString();
+}
+
+/** Converts only exact Gemini Pro model-card rows into the scalar records understood by the rule engine. */
+export function parseGoogleDeepMindModelCards(html: string): { models: Array<{ name: string; version: number; updatedAt: string }> } {
+  const models: Array<{ name: string; version: number; updatedAt: string }> = [];
+  for (const row of html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
+    const cells = [...row[1]!.matchAll(/<t[hd]\b[^>]*>([\s\S]*?)<\/t[hd]>/gi)].map((cell) => htmlText(cell[1]!));
+    if (cells.length < 2) continue;
+    const model = /^Gemini\s+(\d+(?:\.\d+)?)\s+Pro(?:\s+(?:Preview|Experimental))?$/i.exec(cells[0]!);
+    const updatedAt = updatedDate(cells[1]!);
+    if (!model || !updatedAt) continue;
+    const version = Number(model[1]);
+    if (!Number.isFinite(version)) continue;
+    models.push({ name: cells[0]!, version, updatedAt });
+  }
+  return { models };
+}
+
 export function readPath(input: unknown, path: string): unknown {
   return path.split(".").filter(Boolean).reduce<unknown>((value, key) => {
     if (Array.isArray(value)) return value[Number(key)];
@@ -149,16 +198,28 @@ export function extractEvidence(rule: ResolutionRule, payload: unknown, now = ne
 }
 
 export async function fetchEvidence(rule: ResolutionRule, retrievedAt?: Date): Promise<EvidenceSignal> {
+  const sourceFormat = rule.sourceFormat ?? "json";
   const response = await fetch(rule.sourceUrl, {
-    headers: { accept: "application/json", "user-agent": "settlement-edge/1.0" },
+    headers: {
+      accept: sourceFormat === "json" ? "application/json" : "text/html",
+      "user-agent": "settlement-edge/1.0",
+    },
     signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) throw new Error(`${rule.sourceName} returned HTTP ${response.status}`);
   let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    throw new Error(`${rule.sourceName} returned invalid JSON`);
+  if (sourceFormat === "google-deepmind-model-cards") {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.toLowerCase().includes("text/html")) {
+      throw new Error(`${rule.sourceName} returned unexpected content type`);
+    }
+    payload = parseGoogleDeepMindModelCards(await response.text());
+  } else {
+    try {
+      payload = await response.json();
+    } catch {
+      throw new Error(`${rule.sourceName} returned invalid JSON`);
+    }
   }
   const fetchTime = retrievedAt ?? new Date();
   const fetchedAt = fetchTime.toISOString();

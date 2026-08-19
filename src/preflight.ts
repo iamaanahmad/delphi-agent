@@ -40,6 +40,7 @@ export interface PreflightOptions {
 
 const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 const COMPARATORS = new Set(["gt", "gte", "lt", "lte", "eq"]);
+const PREFLIGHT_QUOTE_SHARES = 0.1;
 
 function missingConfiguration(env: NodeJS.ProcessEnv): string[] {
   const missing: string[] = [];
@@ -71,6 +72,9 @@ function validateRules(rules: ResolutionRule[]): void {
       throw new Error(`${label} has an invalid source URL`);
     }
     if (source.protocol !== "https:") throw new Error(`${label} source must use HTTPS`);
+    if (rule.sourceFormat !== undefined && !["json", "google-deepmind-model-cards"].includes(rule.sourceFormat)) {
+      throw new Error(`${label} has an invalid source format`);
+    }
     if (!COMPARATORS.has(rule.comparator)) throw new Error(`${label} has an invalid comparator`);
     if (rule.jsonPath === undefined && rule.aggregation === undefined) {
       throw new Error(`${label} needs a scalar path or aggregation`);
@@ -297,7 +301,7 @@ export async function runPreflight(options: PreflightOptions = {}): Promise<Pref
         ? { gate: "Rule timing", status: "pass", detail: `${uniqueRules.length} rule(s) can produce decisive evidence before market close.`, required: true }
         : { gate: "Rule timing", status: "fail", detail: timingFailures.join(" | "), required: true });
       for (const rule of uniqueRules) {
-        const quote = await probe.quoteBuy(rule.marketId, rule.outcomeIdx, 0.01);
+        const quote = await probe.quoteBuy(rule.marketId, rule.outcomeIdx, PREFLIGHT_QUOTE_SHARES);
         if (!Number.isFinite(quote.costTst) || quote.costTst <= 0) throw new Error("an invalid quote was returned");
       }
       results.push({ gate: "Quote availability", status: "pass", detail: `Read-only quotes succeeded for ${uniqueRules.length} configured outcome(s).`, required: true });

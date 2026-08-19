@@ -1,0 +1,47 @@
+[
+  {
+    "marketId": "0x360274d153c58566943cb21088dd95e45638bda3",
+    "outcomeIdx": 0,
+    "sourceName": "NOAA CO-OPS Water Levels",
+    "sourceUrl": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&application=delphi&begin_date=20260820&end_date=20260820&datum=MLLW&station=8518750&time_zone=gmt&units=english&format=json",
+    "comparator": "gt",
+    "threshold": 5.18,
+    "aggregation": {
+      "recordsPath": "data",
+      "valuePath": "v",
+      "eventAtPath": "t",
+      "eventAtFormat": "noaa-gmt-minute",
+      "reducer": "max",
+      "windowStart": "2026-08-20T18:00:00Z",
+      "windowEnd": "2026-08-20T23:54:00Z"
+    },
+    "freshness": { "type": "retrieval" },
+    "maxFreshnessAgeMinutes": 30
+  },
+  {
+    "marketId": "0xbf1ce7c9d751b92bfac4acefe0e87d82b1d30163",
+    "outcomeIdx": 0,
+    "sourceName": "MLS Stats API",
+    "sourceUrl": "https://stats-api.mlssoccer.com/matches/seasons/MLS-SEA-0001KA?match_date%5Bgte%5D=2026-08-19&match_date%5Blte%5D=2026-08-20&per_page=120&sort=planned_kickoff_time%3Aasc%2Chome_team_name%3Aasc",
+    "selection": {
+      "recordsPath": "schedule",
+      "keyPath": "match_id",
+      "equals": "MLS-MAT-0009J5"
+    },
+    "jsonPath": "home_team_goals",
+    "comparator": "gt",
+    "threshold": { "jsonPath": "away_team_goals" },
+    "eventAtPath": "planned_kickoff_time",
+    "eventAtFormat": "iso",
+    "freshness": { "type": "retrieval" },
+    "conditions": [
+      {
+        "jsonPath": "match_status",
+        "comparator": "eq",
+        "threshold": "finalWhistle"
+      }
+    ],
+    "maxFreshnessAgeMinutes": 240,
+    "earliestDecisionAt": "2026-08-20T00:00:00Z"
+  }
+]

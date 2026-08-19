@@ -18,7 +18,7 @@ Trade the fact before the market prices it.
 
 The competition ranks agents by final P&L. Most agents can form an opinion; the hard part is finding an opinion the market has not priced yet and converting it into profit without saturating a shallow LMSR curve.
 
-Settlement Edge currently has reviewed mappings for Wikimedia pageviews, NOAA water levels, and an MLS match feed. It waits for high-confidence evidence, subtracts disagreement and staleness, requests an execution quote when Delphi API access is configured, and permits a buy only when the edge survives price impact and portfolio limits.
+Settlement Edge currently monitors a reviewed Gemini model-release mapping and retains retired Wikimedia, NOAA, and MLS mappings as regression fixtures. It waits for high-confidence evidence, subtracts disagreement and staleness, requests an execution quote when Delphi API access is configured, and permits a buy only when the edge survives price impact and portfolio limits.
 
 ## Solution
 
@@ -88,7 +88,7 @@ This is competition testnet software using play-money TST, not financial advice 
 
 ## Key features
 
-- Primary-source JSON extraction with exact settlement comparators, separate event and freshness timestamps, and bounded maximum-over-window rules.
+- Primary-source JSON extraction plus a narrow Google DeepMind model-card adapter, with exact settlement comparators, separate event and freshness timestamps, and bounded maximum-over-window rules.
 - Conservative probability estimates that penalize stale or conflicting evidence.
 - Quote-aware size search designed for shallow competition LMSR curves.
 - Two-switch execution authorization and dry-run defaults.
@@ -152,7 +152,7 @@ npm run agent -- config/resolution-rules.json
 
 That command fetches the declared primary source, evaluates freshness, joins the open market, requests quotes, and prints a dry-run decision. It submits only when both live switches in `.env` are set to `true`.
 
-The repository includes two reviewed competition mappings for NOAA and MLS in `config/resolution-rules.json`. Both are rejected by the pre-close timing gate: NOAA's evidence window starts after the market closes, while the MLS result cannot be decisive before its market closes. The settled Wikimedia mapping remains in [live-market-rules.md](docs/live-market-rules.md) as historical documentation. Reviewed means the source mapping was checked; it does not mean the market is tradable or has positive expected value.
+The active rule file contains one timing-eligible mapping for an official Gemini Pro model release. It accepts only exact Google DeepMind model-card rows for Gemini Pro version 3.5 or later, and it cannot infer a `No` outcome or trade from an absent or ambiguous row. The retired NOAA, MLS, and settled Wikimedia mappings remain in fixtures and [live-market-rules.md](docs/live-market-rules.md) for regression coverage and the audit trail. Reviewed means the source mapping was checked; it does not mean the market is profitable or that qualifying evidence currently exists.
 
 For continuous monitoring, run the watcher. It reloads the rule file, open markets, and evidence every 60 seconds by default:
 
@@ -201,7 +201,7 @@ Run `npm run demo`. The fixture supplies a 61% market and a simulated Wikimedia 
 - [x] Explicit two-switch live-order gate
 - [x] Deterministic credential-free replay
 - [x] Continuous 60-second watcher with retry, shutdown, and duplicate-order protection
-- [x] Two reviewed live-market mappings with offline source fixtures, explicit timing rejection, and one retired historical mapping
+- [x] One timing-eligible live mapping plus retired post-close mappings with offline boundary fixtures
 - [x] Stale-data, disagreement, low-edge, and quote-failure stops
 - [x] Hash-linked decision receipts
 - [x] Restart-safe duplicate and ambiguous-order state

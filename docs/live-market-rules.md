@@ -1,37 +1,35 @@
 # Reviewed live-market rules
 
-The two configured rules were rechecked against the open Delphi competition markets and their public settlement wording on 2026-08-19. They are committed in `config/resolution-rules.json`; loading that file does not enable trading. Neither is eligible for live evaluation because its decisive source fact cannot arrive before market close. The settled Wikimedia rule remains below as historical documentation only.
+All eight open Delphi competition markets were rechecked against their exact close times and official settlement sources on 2026-08-19. One Gemini release rule is timing-eligible and active in `config/resolution-rules.json`. The other seven markets cannot produce safely validated decisive evidence before close with the current extractor and remain unconfigured.
 
-## Chess Wikipedia pageviews (settled, retired)
+Loading the rule file does not enable trading. The active source currently contains no qualifying Gemini Pro release, so evaluation fails closed without proposing an order.
 
-This rule settled on 2026-08-18 and was removed from active monitoring on 2026-08-19. Its reviewed mapping remains here for the audit trail.
+## Open-market screening
 
-- Market: `0x7fb6eb62585de2fde740bfe4b4bae0c279919021`, outcome 0 (`Yes`).
-- Settlement: the English Wikipedia article `Chess` receives more than 2,250 pageviews on 2026-08-18 UTC. Exactly 2,250 resolves `No`.
-- Source: Wikimedia Pageviews API, project `en.wikipedia`, access `all-access`, agent `user`, daily granularity, article `Chess`.
-- Mapping: `items.0.views gt 2250`; event timestamp `items.0.timestamp` in `yyyyMMddHH` UTC format.
-- Market page: https://competition.delphi.fyi/markets/0x7fb6eb62585de2fde740bfe4b4bae0c279919021
+| Market | Close (UTC) | Earliest decisive official evidence | Verdict |
+|---|---:|---|---|
+| WTI front-month below $65 on August 21 | 2026-08-21 18:30 | CME's settlement window ends at 18:30 UTC; public settlement files publish later | Reject: not strictly pre-close |
+| Gemini 3.5 Pro or later by August 21 | 2026-08-21 03:59 | An official Google DeepMind model-card row can appear before close | Accept for `Yes` only |
+| The Battery maximum water level above 5.18 feet | 2026-08-20 17:00 | NOAA observation window begins at 18:00 UTC | Reject: source begins 60 minutes after close |
+| 10-year Treasury yield above 4.68% | 2026-08-20 13:00 | Treasury's official daily rate uses market quotations around 19:30 UTC | Reject: official rate is determined after close |
+| Rayo Vallecano versus Alavés ends in a draw | 2026-08-20 19:00 | Scheduled kickoff is 19:00 UTC | Reject: result cannot exist before close |
+| Sporting Kansas City beats St. Louis CITY SC | 2026-08-20 00:00 | Scheduled kickoff is 00:00 UTC | Reject: result cannot exist before close |
+| Botafogo versus Cienciano has at least four goals | 2026-08-21 00:30 | Scheduled kickoff is 00:30 UTC | Reject: result cannot exist before close |
+| AARO or ODNI publishes previously unreleased UAP records | 2026-08-21 14:00 | A qualifying publication could appear before close | Reject: requires historical document-novelty validation; AARO also blocks the CLI source request |
 
-## The Battery maximum water level
+## Gemini 3.5 Pro or later
 
-- Market: `0x360274d153c58566943cb21088dd95e45638bda3`, outcome 0 (`Yes`).
-- Settlement: the maximum NOAA observation is greater than 5.18 feet MLLW from 18:00 through 23:54 UTC on 2026-08-20. Exactly 5.18 resolves `No`.
-- Source: NOAA CO-OPS station `8518750`, product `water_level`, datum `MLLW`, GMT, English units, JSON format.
-- Mapping: select `data` records inside the exact UTC window, parse `v`, and apply `max gt 5.18`; each record carries its event timestamp at `t`.
-- Source check: the endpoint and station returned the expected `metadata` plus six-minute `data` records for 2026-08-18. The exact 2026-08-20 request currently returns NOAA's no-data response because the observation window has not started; the rule fails closed until observations exist.
-- Timing status: ineligible. The market closes at `2026-08-20T17:00:00Z`, but the required observation window starts at `2026-08-20T18:00:00Z`.
-- Market page: https://competition.delphi.fyi/markets/0x360274d153c58566943cb21088dd95e45638bda3
+- Market: `0x2e0d3ee960783033bb70e5b5577a04a1d19f7dcf`, outcome 0 (`Yes`).
+- Settlement: Google officially releases a Gemini Pro-family model numbered 3.5 or later by the market cutoff.
+- Source: Google DeepMind's official model-card table at https://deepmind.google/models/model-cards/.
+- Mapping: accept only an exact row named `Gemini <version> Pro`, optionally suffixed `Preview` or `Experimental`; require version `gte 3.5` and an `Updated` date from 2026-08-10 through 2026-08-20.
+- Timing boundary: the source exposes a calendar date rather than a release time. An August 21 row is therefore excluded because its publication cannot be proven earlier than the 03:59 UTC close.
+- Current source check: the official table is reachable but contains no qualifying Gemini Pro 3.5-or-later row. Missing, malformed, non-Pro, `Pro Image`, date-ambiguous, and post-cutoff rows cannot carry confidence.
 
-## Sporting Kansas City versus St. Louis CITY SC
+## Retired reviewed mappings
 
-- Market: `0xbf1ce7c9d751b92bfac4acefe0e87d82b1d30163`, outcome 0 (`Yes`).
-- Settlement: Sporting Kansas City wins after regulation in the MLS match scheduled for 2026-08-19 local time. A draw or St. Louis win resolves `No`.
-- Source: the public schedule JSON feed used by MLSsoccer.com, selecting match `MLS-MAT-0009J5` from season `MLS-SEA-0001KA`.
-- Mapping: require exactly one record whose `match_id` is `MLS-MAT-0009J5`, then require `match_status eq finalWhistle` and compare `home_team_goals gt away_team_goals`; the event timestamp is `planned_kickoff_time`.
-- Source check: the feed returned one exact scheduled record with Sporting Kansas City at home, St. Louis CITY SC away, and kickoff at `2026-08-20T00:00:00Z`. Zero or multiple matching records fail closed.
-- Timing status: ineligible. The match is scheduled to start exactly when the market closes at `2026-08-20T00:00:00Z`, so the final result cannot be known before close.
-- Market page: https://competition.delphi.fyi/markets/0xbf1ce7c9d751b92bfac4acefe0e87d82b1d30163
+The former NOAA and MLS mappings remain as offline regression fixtures. They still prove exact source semantics, including strict water-level comparison, match identity, and final-whistle conditions, but they are excluded from active monitoring because their decisive facts occur after close. The settled Wikimedia Chess mapping remains documented for the same audit purpose.
 
 ## Safety boundary
 
-The reviewed pack identifies settlement facts; it does not claim a profitable timing edge. Preflight and live evaluation reject any rule whose earliest decisive fact is missing or is not strictly before the market close. Each rule treats the source event time separately from the locally observed HTTPS retrieval time. The strict 15-minute source freshness check remains active, and `.env.example` keeps `ALLOW_LIVE_TRADING=false` and `SETTLEMENT_EDGE_EXECUTE=false`.
+The screening identifies settlement facts; it does not claim a profitable timing edge. Preflight and live evaluation reject any rule whose earliest decisive fact is missing or is not strictly before the market close. Source timestamps remain separate from local HTTPS retrieval time, the 15-minute freshness check remains active, and `.env.example` keeps `ALLOW_LIVE_TRADING=false` and `SETTLEMENT_EDGE_EXECUTE=false`.

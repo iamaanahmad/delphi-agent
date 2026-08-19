@@ -1,5 +1,6 @@
 export type Comparator = "gt" | "gte" | "lt" | "lte" | "eq";
 export type TimestampFormat = "iso" | "wikimedia-hour" | "noaa-gmt-minute";
+export type SourceFormat = "json" | "google-deepmind-model-cards";
 
 export type RuleThreshold = number | string | { jsonPath: string };
 
@@ -95,6 +96,7 @@ export interface ResolutionRule {
   outcomeIdx: number;
   sourceName: string;
   sourceUrl: string;
+  sourceFormat?: SourceFormat;
   jsonPath?: string;
   comparator: Comparator;
   threshold: RuleThreshold;
