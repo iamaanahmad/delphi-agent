@@ -9,16 +9,27 @@ import test from "node:test";
 const run = promisify(execFile);
 
 async function runWithoutApiKey(command: "scan" | "run") {
-  const env = { ...process.env };
+  const root = process.cwd();
+  const directory = await mkdtemp(join(tmpdir(), "settlement-edge-no-credentials-"));
+  const env: NodeJS.ProcessEnv = { ...process.env };
   delete env.DELPHI_API_ACCESS_KEY;
   try {
-    await run(process.execPath, ["--import", "tsx", "src/cli.ts", command], {
-      cwd: process.cwd(),
+    const args = [
+      "--import",
+      join(root, "node_modules/tsx/dist/loader.mjs"),
+      join(root, "src/cli.ts"),
+      command,
+    ];
+    if (command === "run") args.push(join(root, "config/resolution-rules.json"));
+    const result = await run(process.execPath, args, {
+      cwd: directory,
       env,
     });
-    assert.fail(`${command} should fail without a Delphi API key`);
+    return { code: 0, stderr: result.stderr };
   } catch (error) {
     return error as { code: number; stderr: string };
+  } finally {
+    await rm(directory, { recursive: true, force: true });
   }
 }
 
@@ -67,12 +78,19 @@ test("both active-market replays write safe receipts without an order", async ()
       assert.doesNotMatch(result.stdout, /Transaction:/);
     }
     const records = (await readFile(receiptPath, "utf8")).trim().split("\n").map((line) => JSON.parse(line) as {
-      record: { type: string; transaction: { status: string; transactionHash?: string } };
+      record: {
+        type: string;
+        environment?: string;
+        transaction?: { status: string; transactionHash?: string };
+      };
     });
-    assert.equal(records.length, 2);
-    assert.ok(records.every(({ record }) => record.type === "decision"));
-    assert.ok(records.every(({ record }) => record.transaction.status === "not_submitted"));
-    assert.ok(records.every(({ record }) => record.transaction.transactionHash === undefined));
+    const decisions = records.filter(({ record }) => record.type === "decision");
+    const telemetry = records.filter(({ record }) => record.type === "telemetry");
+    assert.equal(decisions.length, 2);
+    assert.ok(decisions.every(({ record }) => record.transaction?.status === "not_submitted"));
+    assert.ok(decisions.every(({ record }) => record.transaction?.transactionHash === undefined));
+    assert.ok(telemetry.length > 0);
+    assert.ok(telemetry.every(({ record }) => record.environment === "replay"));
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
