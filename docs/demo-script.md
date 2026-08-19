@@ -2,7 +2,7 @@
 
 ## 0:00 to 0:15: the contest problem
 
-Open the competition leaderboard and say: “This contest is judged by final P&L. The opportunity is not more trades. It is recognizing an objective result before the market fully prices it.”
+Open the competition leaderboard and say: “Settlement Edge has placed 0 live orders and realized 0 competition TST. The replay you are about to see is simulated, not live performance. This contest is judged by final P&L. The opportunity is not more trades. It is recognizing an objective result before the market fully prices it.”
 
 ## 0:15 to 0:35: the evidence
 
