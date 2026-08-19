@@ -31,6 +31,9 @@ for (const page of pages) {
   if (!html.includes(`<link rel="canonical" href="${page.canonical}">`)) {
     throw new Error(`${page.path} is missing its canonical URL`);
   }
+  if (!html.includes('<script defer src="site-analytics.js"></script>')) {
+    throw new Error(`${page.path} is missing the privacy-safe visitor analytics loader`);
+  }
 }
 
 const index = await readFile(resolve(root, "docs/index.html"), "utf8");
@@ -57,10 +60,37 @@ for (const text of [
   "Optional lifecycle metrics are disabled by default",
   "does not include wallet addresses, balances, transaction hashes, source URLs, source identifiers, credentials, or free-form failure text",
   "Dry-run, replay, and test events use separate event names and remain outside live competition totals",
+  "replay input masking stays on when the managed project enables recording",
+  "limited to 280 characters",
+  "does not identify visitors",
 ]) {
   if (!privacy.includes(text)) {
     throw new Error(`docs/privacy.html is missing required telemetry disclosure: ${text}`);
   }
+}
+
+const analytics = await readFile(resolve(root, "docs/site-analytics.js"), "utf8");
+for (const text of [
+  'persistence: "localStorage"',
+  'person_profiles: "never"',
+  'disable_session_recording: false',
+  'maskAllInputs: true',
+  'rageclick: true',
+  'posthog.capture("guide_viewed"',
+  'posthog.capture("guide_engaged"',
+  'posthog.capture("demo_engaged"',
+  'posthog.capture("site_state_encountered"',
+  'posthog.capture("feedback_submitted"',
+  "posthog.startSessionRecording(true)",
+  "What were you hoping to understand about Settlement Edge?",
+]) {
+  if (!analytics.includes(text)) {
+    throw new Error(`docs/site-analytics.js is missing required visitor feedback behavior: ${text}`);
+  }
+}
+
+if (!analytics.includes("FEEDBACK_MAX_LENGTH = 280") || !analytics.includes("slice(0, FEEDBACK_MAX_LENGTH)")) {
+  throw new Error("docs/site-analytics.js must cap deliberate feedback at 280 characters");
 }
 
 const terms = await readFile(resolve(root, "docs/terms.html"), "utf8");
