@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { compare, extractEvidence, readPath } from "../src/evidence.js";
+import { compare, extractEvidence, parseGoogleDeepMindModelCards, readPath } from "../src/evidence.js";
 import type { ResolutionRule } from "../src/types.js";
 
 const loadJson = async (path: string): Promise<unknown> =>
@@ -9,6 +9,9 @@ const loadJson = async (path: string): Promise<unknown> =>
 
 const liveRules = async (): Promise<ResolutionRule[]> =>
   JSON.parse(await readFile(new URL("../config/resolution-rules.json", import.meta.url), "utf8")) as ResolutionRule[];
+
+const postCloseRules = async (): Promise<ResolutionRule[]> =>
+  JSON.parse(await readFile(new URL("../fixtures/live-rules/post-close-rules.json", import.meta.url), "utf8")) as ResolutionRule[];
 
 test("reads nested object and array paths", () => {
   assert.equal(readPath({ data: [{ value: 42 }] }, "data.0.value"), 42);
@@ -20,8 +23,8 @@ test("evaluates numeric and string settlement rules", () => {
   assert.equal(compare(99, "gt", 100), false);
 });
 
-test("reviewed fixtures match both active live Yes outcomes", async () => {
-  const rules = await liveRules();
+test("reviewed fixtures preserve both retired post-close Yes outcomes", async () => {
+  const rules = await postCloseRules();
   const fixture = await loadJson("../fixtures/live-rules/match.json") as Record<string, unknown>;
   assert.equal(rules.length, 2);
   assert.deepEqual(rules.map((rule) => rule.marketId), [
@@ -40,7 +43,7 @@ test("reviewed fixtures match both active live Yes outcomes", async () => {
 });
 
 test("reviewed fixtures preserve exact non-match boundaries", async () => {
-  const rules = await liveRules();
+  const rules = await postCloseRules();
   const fixture = await loadJson("../fixtures/live-rules/non-match.json") as Record<string, unknown>;
   const observations = [
     extractEvidence(rules[0]!, fixture.noaa, new Date("2026-08-21T00:00:00Z")),
@@ -123,7 +126,7 @@ test("absent and malformed publication timestamps fail closed", () => {
 });
 
 test("malformed aggregate source data fails closed", async () => {
-  const rules = await liveRules();
+  const rules = await postCloseRules();
   const fixture = await loadJson("../fixtures/live-rules/malformed.json");
   assert.throws(
     () => extractEvidence(rules[0]!, fixture, new Date("2026-08-21T00:00:00Z")),
@@ -132,7 +135,7 @@ test("malformed aggregate source data fails closed", async () => {
 });
 
 test("a scheduled MLS match is not treated as a draw", async () => {
-  const rules = await liveRules();
+  const rules = await postCloseRules();
   const fixture = await loadJson("../fixtures/live-rules/non-match.json") as { mls: Record<string, unknown> };
   const match = (fixture.mls.schedule as Array<Record<string, unknown>>)[0]!;
   match.match_status = "scheduled";
@@ -142,7 +145,7 @@ test("a scheduled MLS match is not treated as a draw", async () => {
 });
 
 test("MLS selection fails closed unless exactly one match id is present", async () => {
-  const rules = await liveRules();
+  const rules = await postCloseRules();
   const fixture = await loadJson("../fixtures/live-rules/match.json") as { mls: { schedule: unknown[] } };
   const mlsRule = rules[1]!;
   assert.throws(
@@ -152,5 +155,43 @@ test("MLS selection fails closed unless exactly one match id is present", async 
   assert.throws(
     () => extractEvidence(mlsRule, { schedule: [fixture.mls.schedule[0], fixture.mls.schedule[0]] }, new Date("2026-08-20T02:00:00Z")),
     /Expected exactly one record.*received 2/,
+  );
+});
+
+test("Google DeepMind model-card rows expose only exact Gemini Pro versions", async () => {
+  const rules = await liveRules();
+  assert.equal(rules.length, 1);
+  const rule = rules[0]!;
+  const payload = parseGoogleDeepMindModelCards(`
+    <table><tbody>
+      <tr><th scope="row">Gemini 3.5 Flash</th><td>Updated 18 August 2026</td></tr>
+      <tr><th scope="row">Gemini 3 Pro</th><td>Updated 18 August 2026</td></tr>
+      <tr><th scope="row">Gemini 3.5 Pro</th><td>Updated 20 August 2026</td></tr>
+      <tr><th scope="row">Gemini 4 Pro Image</th><td>Updated 20 August 2026</td></tr>
+    </tbody></table>
+  `);
+  assert.deepEqual(payload.models, [
+    { name: "Gemini 3 Pro", version: 3, updatedAt: "2026-08-18T00:00:00.000Z" },
+    { name: "Gemini 3.5 Pro", version: 3.5, updatedAt: "2026-08-20T00:00:00.000Z" },
+  ]);
+  const observation = extractEvidence(rule, payload, new Date("2026-08-20T12:00:00Z"));
+  assert.equal(observation.probability, 0.995);
+  assert.equal(observation.confidence, 0.98);
+});
+
+test("Google DeepMind model-card extraction rejects ambiguous and post-cutoff rows", async () => {
+  const rules = await liveRules();
+  const rule = rules[0]!;
+  const payload = parseGoogleDeepMindModelCards(`
+    <table><tbody>
+      <tr><th scope="row">Gemini 3.5 Pro</th><td>Coming soon</td></tr>
+      <tr><th scope="row">Gemini 4 Pro</th><td>Updated 21 August 2026</td></tr>
+      <tr><th scope="row">Nano Banana Pro</th><td>Updated 20 August 2026</td></tr>
+    </tbody></table>
+  `);
+  assert.deepEqual(payload.models, [{ name: "Gemini 4 Pro", version: 4, updatedAt: "2026-08-21T00:00:00.000Z" }]);
+  assert.throws(
+    () => extractEvidence(rule, payload, new Date("2026-08-21T01:00:00Z")),
+    /No numeric observations/,
   );
 });

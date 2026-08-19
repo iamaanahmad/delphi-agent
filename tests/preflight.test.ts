@@ -38,6 +38,7 @@ const readyEnv: NodeJS.ProcessEnv = {
 
 class FixtureProbe implements PreflightProbe {
   buyCalls = 0;
+  quoteShares: number[] = [];
   signerAddress = readyEnv.DELPHI_REGISTERED_WALLET_ADDRESS!;
   ethBalance = 1_000_000_000_000_000n;
   tstBalance = 20_000_000n;
@@ -46,7 +47,10 @@ class FixtureProbe implements PreflightProbe {
   async getEthBalance() { return this.ethBalance; }
   async getTstBalance() { return { balance: this.tstBalance, decimals: 6 }; }
   async listOpenMarkets() { return [market]; }
-  async quoteBuy() { return { costTst: 0.005 }; }
+  async quoteBuy(_marketId: string, _outcomeIdx: number, shares: number) {
+    this.quoteShares.push(shares);
+    return { costTst: 0.005 };
+  }
   async verifyWalletRegistration() { return this.registration; }
 }
 
@@ -76,6 +80,7 @@ test("reports every gate and passes a fully mocked read-only path", async () => 
   assert.ok(results.every((result) => result.status === "pass"));
   assert.equal(preflightPassed(results), true);
   assert.equal(probe.buyCalls, 0);
+  assert.deepEqual(probe.quoteShares, [0.1]);
   const output = formatPreflight(results);
   assert.doesNotMatch(output, /api-secret|wallet-secret/);
   assert.match(output, /No transactions were submitted/);

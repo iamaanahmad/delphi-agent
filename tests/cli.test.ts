@@ -58,7 +58,7 @@ test("deterministic replay labels simulated cost and P&L", async () => {
   assert.match(result.stdout, /dry-run only/);
 });
 
-test("both active-market replays write safe receipts without an order", async () => {
+test("retired market replays preserve safe receipts without an order", async () => {
   const directory = await mkdtemp(join(tmpdir(), "settlement-edge-active-pack-"));
   const receiptPath = join(directory, "receipts.jsonl");
   const env = {

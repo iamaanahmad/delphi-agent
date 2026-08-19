@@ -6,7 +6,7 @@ Settlement Edge must fail closed. A missing source, stale timestamp, malformed v
 
 ## Components
 
-1. `rule-timing.ts` rejects mappings whose decisive source fact cannot arrive strictly before market close. `evidence.ts` then reads a declared scalar from an HTTPS JSON response, records the event time separately from publication or retrieval freshness, and evaluates the exact settlement comparator.
+1. `rule-timing.ts` rejects mappings whose decisive source fact cannot arrive strictly before market close. `evidence.ts` then reads a declared scalar from an HTTPS JSON response or the narrowly parsed Google DeepMind model-card table, records the event time separately from publication or retrieval freshness, and evaluates the exact settlement comparator.
 2. `strategy.ts` combines one or more probability signals. It penalizes disagreement and shrinks the result back toward the market's probability.
 3. `gateway.ts` isolates the official SDK. The live implementation speaks to `competition-testnet`; the replay implementation models shallow price impact deterministically.
 4. `engine.ts` filters stale evidence, rejects disagreement, sizes a trade, and optionally executes it.
@@ -47,4 +47,4 @@ Source and schema failures are terminal records, so a failed fetch does not disa
 - A reviewed source mapping is not necessarily tradable. Every live rule must declare or derive its earliest decisive evidence time, and that time must be strictly before the SDK market close.
 - The agent can redeem or liquidate eligible positions through a guarded portfolio sweep. It does not rebalance or sell open positions.
 - The competition page says entrants must meet published minimum activity requirements, but no numeric trade or distinct-market threshold is visible. Confirm any numeric requirement the organizer publishes.
-- Source adapters currently expect JSON. CSV and signed-document adapters are natural extensions after a live market requires them.
+- Source adapters default to JSON. The only HTML adapter accepts exact Gemini Pro rows from Google DeepMind's model-card table; generic HTML, document-novelty, CSV, and signed-document extraction remain out of scope.
