@@ -119,6 +119,13 @@ test("fails closed when a reviewed rule has no freshness source", async () => {
   assert.equal(preflightPassed(results), false);
 });
 
+test("fails closed when a reviewed rule has an incomplete record selection", async () => {
+  const invalid = { ...rule, selection: { recordsPath: "schedule", keyPath: "", equals: "match" } };
+  const results = await run(new FixtureProbe(), { loadRules: async () => [invalid] });
+  assert.equal(results.find((result) => result.gate === "Reviewed rules")?.status, "fail");
+  assert.equal(preflightPassed(results), false);
+});
+
 test("keeps registration unavailable when no reliable source exists", async () => {
   const probe = new FixtureProbe();
   probe.registration = undefined;

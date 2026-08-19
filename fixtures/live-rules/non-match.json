@@ -10,14 +10,14 @@
     ]
   },
   "mls": {
-    "match_information": {
+    "schedule": [{
       "match_id": "MLS-MAT-0009J5",
       "home_team_name": "Sporting Kansas City",
       "away_team_name": "St. Louis CITY SC",
       "home_team_goals": 1,
       "away_team_goals": 1,
-      "kickoff_time": "2026-08-20T00:00:00Z",
+      "planned_kickoff_time": "2026-08-20T00:00:00Z",
       "match_status": "finalWhistle"
-    }
+    }]
   }
 }

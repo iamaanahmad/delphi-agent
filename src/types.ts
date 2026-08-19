@@ -9,6 +9,12 @@ export interface RuleCondition {
   threshold: number | string;
 }
 
+export interface RuleSelection {
+  recordsPath: string;
+  keyPath: string;
+  equals: number | string;
+}
+
 export interface RuleAggregation {
   recordsPath: string;
   valuePath: string;
@@ -80,6 +86,7 @@ export interface ResolutionRule {
   eventAtPath?: string;
   eventAtFormat?: TimestampFormat;
   freshness: RuleFreshness;
+  selection?: RuleSelection;
   aggregation?: RuleAggregation;
   conditions?: RuleCondition[];
   maxFreshnessAgeMinutes?: number;

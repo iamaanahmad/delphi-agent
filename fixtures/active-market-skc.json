@@ -1,0 +1,26 @@
+{
+  "market": {
+    "id": "0xbf1ce7c9d751b92bfac4acefe0e87d82b1d30163",
+    "question": "Will Sporting Kansas City win their MLS match against St. Louis City SC scheduled for Aug 19, 2026?",
+    "outcomes": ["Yes", "No"],
+    "probabilities": [0.61, 0.39],
+    "prices": [0.61, 0.39],
+    "status": "open",
+    "resolvesAt": "2026-08-20T06:30:00.000Z",
+    "marketUrl": "https://competition.delphi.fyi/markets/0xbf1ce7c9d751b92bfac4acefe0e87d82b1d30163"
+  },
+  "outcomeIdx": 0,
+  "evidence": [
+    {
+      "id": "skc-mls-active-rule",
+      "source": "MLS Stats API",
+      "sourceUrl": "https://stats-api.mlssoccer.com/matches/seasons/MLS-SEA-0001KA",
+      "eventTime": "NOW",
+      "freshnessTime": "NOW",
+      "freshnessType": "retrieval",
+      "probability": 0.995,
+      "confidence": 0.98,
+      "detail": "offline fixture for the exact MLS match-id mapping"
+    }
+  ]
+}

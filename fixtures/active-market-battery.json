@@ -1,0 +1,26 @@
+{
+  "market": {
+    "id": "0x360274d153c58566943cb21088dd95e45638bda3",
+    "question": "Will water level at The Battery, New York exceed 5.18 ft MLLW between 18:00 and 23:54 UTC on 2026-08-20?",
+    "outcomes": ["Yes", "No"],
+    "probabilities": [0.61, 0.39],
+    "prices": [0.61, 0.39],
+    "status": "open",
+    "resolvesAt": "2026-08-21T05:00:00.000Z",
+    "marketUrl": "https://competition.delphi.fyi/markets/0x360274d153c58566943cb21088dd95e45638bda3"
+  },
+  "outcomeIdx": 0,
+  "evidence": [
+    {
+      "id": "battery-water-level-active-rule",
+      "source": "NOAA CO-OPS Water Levels",
+      "sourceUrl": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter",
+      "eventTime": "NOW",
+      "freshnessTime": "NOW",
+      "freshnessType": "retrieval",
+      "probability": 0.995,
+      "confidence": 0.98,
+      "detail": "offline fixture for the reviewed maximum-water-level mapping"
+    }
+  ]
+}
