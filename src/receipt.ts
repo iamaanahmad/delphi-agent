@@ -92,7 +92,62 @@ export interface ReconciliationLedgerRecord {
   realizedPnlTst: Availability<number>;
 }
 
-export type LedgerRecord = DecisionLedgerRecord | FailureLedgerRecord | ReconciliationLedgerRecord;
+export type TelemetryEnvironment = "live" | "dry_run" | "replay" | "test";
+
+export const TELEMETRY_ENVIRONMENTS = ["live", "dry_run", "replay", "test"] as const satisfies readonly TelemetryEnvironment[];
+
+export type TelemetryEventName =
+  | "run_started"
+  | "evidence_accepted"
+  | "evidence_rejected"
+  | "decision_made"
+  | "quote_obtained"
+  | "order_submitted"
+  | "order_failed"
+  | "settlement_observed"
+  | "redemption_observed"
+  | "realized_pnl_observed";
+
+export const TELEMETRY_EVENT_NAMES = [
+  "run_started",
+  "evidence_accepted",
+  "evidence_rejected",
+  "decision_made",
+  "quote_obtained",
+  "order_submitted",
+  "order_failed",
+  "settlement_observed",
+  "redemption_observed",
+  "realized_pnl_observed",
+] as const satisfies readonly TelemetryEventName[];
+
+export interface TelemetryEventData {
+  sourceId?: string;
+  sourceCount?: number;
+  stage?: FailureLedgerRecord["stage"];
+  action?: Decision["action"];
+  quoteCostTst?: number;
+  quoteShares?: number;
+  transactionStatus?: TransactionLedgerState["status"];
+  settlementStatus?: MarketSettlementSnapshot["status"];
+  redemptionStatus?: "redeemed" | "not_redeemed" | "no_position";
+  tokensRedeemedTst?: number;
+  realizedPnlTst?: number;
+}
+
+export interface TelemetryLedgerRecord {
+  type: "telemetry";
+  schemaVersion: 1;
+  event: TelemetryEventName;
+  runId: string;
+  environment: TelemetryEnvironment;
+  marketId?: string;
+  opportunityId?: string;
+  sourceRecordHash?: string;
+  data: TelemetryEventData;
+}
+
+export type LedgerRecord = DecisionLedgerRecord | FailureLedgerRecord | ReconciliationLedgerRecord | TelemetryLedgerRecord;
 
 export interface LedgerEnvelope {
   version: 2;

@@ -12,7 +12,14 @@ import type {
 const sharesToBigint = (shares: number) => BigInt(Math.round(shares * 1e18));
 
 export class DelphiGateway implements TradingGateway {
-  private readonly client = new DelphiClient({ network: "competition-testnet" });
+  private readonly client: DelphiClient;
+
+  constructor() {
+    if (!process.env.DELPHI_API_ACCESS_KEY) {
+      throw new Error("Requires apiKey; set DELPHI_API_ACCESS_KEY before using live competition commands");
+    }
+    this.client = new DelphiClient({ network: "competition-testnet" });
+  }
 
   async listOpenMarkets(): Promise<MarketView[]> {
     const competitionId = process.env.DELPHI_COMPETITION_ID || undefined;

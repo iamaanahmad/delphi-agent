@@ -14,6 +14,7 @@
     "scan": "tsx src/cli.ts scan",
     "preflight": "tsx src/preflight-cli.ts",
     "reconcile": "tsx src/cli.ts reconcile",
+    "metrics": "tsx src/cli.ts metrics",
     "agent": "tsx src/cli.ts run",
     "watch": "tsx src/cli.ts watch",
     "test": "tsx --test tests/**/*.test.ts",

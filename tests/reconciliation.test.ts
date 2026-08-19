@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { evaluateMarket } from "../src/engine.js";
 import { reconcileMarket } from "../src/reconciliation.js";
+import { appendTelemetry } from "../src/telemetry.js";
 import type {
   EvidenceSignal,
   MarketView,
@@ -83,6 +84,8 @@ test("records a complete deterministic trade-to-redemption lifecycle", async () 
     confidence: 0.98,
     detail: "101 gte 100; age 0.0m",
   };
+  const telemetry = { runId: "test-lifecycle", environment: "test" as const };
+  await appendTelemetry({ ...telemetry, event: "run_started", data: {} }, ledgerPath, new Date("2026-08-18T00:00:00.000Z"));
   const decision = await evaluateMarket(
     new LifecycleGateway(),
     market,
@@ -90,11 +93,11 @@ test("records a complete deterministic trade-to-redemption lifecycle", async () 
     [evidence],
     policy,
     true,
-    { receiptPath: ledgerPath, opportunityId: "fixture-opportunity" },
+    { receiptPath: ledgerPath, opportunityId: "fixture-opportunity", telemetry },
   );
   assert.equal(decision.transactionHash, "0xsubmitted");
 
-  const reconciliation = await reconcileMarket(new SettledGateway(), market.id, ledgerPath);
+  const reconciliation = await reconcileMarket(new SettledGateway(), market.id, ledgerPath, telemetry);
   assert.deepEqual(reconciliation.settlement, { available: true, value: { status: "settled", winningOutcomeIdx: 0 } });
   assert.deepEqual(reconciliation.redemption, { available: true, value: { status: "redeemed", tokensRedeemedTst: 1 } });
   assert.deepEqual(reconciliation.wallet.changeTst, { available: true, value: 0.4 });
@@ -106,10 +109,10 @@ test("records a complete deterministic trade-to-redemption lifecycle", async () 
     previousHash: string;
     record: Record<string, unknown>;
   });
-  assert.equal(entries.length, 2);
+  assert.equal(entries.length, 10);
   assert.equal(entries[0]?.previousHash, "GENESIS");
-  assert.equal(entries[1]?.previousHash, entries[0]?.hash);
-  const decisionRecord = entries[0]?.record as {
+  entries.slice(1).forEach((entry, index) => assert.equal(entry.previousHash, entries[index]?.hash));
+  const decisionRecord = entries[1]?.record as {
     sources: Array<{ publicationTime: { available: boolean }; fetchTime: { available: boolean } }>;
     marketProbability: { value: number };
     estimate: { available: boolean };
@@ -128,6 +131,25 @@ test("records a complete deterministic trade-to-redemption lifecycle", async () 
   assert.equal(decisionRecord.riskDecision.action, "buy");
   assert.deepEqual(decisionRecord.transaction, { status: "submitted", transactionHash: "0xsubmitted" });
   assert.equal(decisionRecord.wallet.changeTst.value, -0.6);
+  assert.deepEqual(
+    entries.filter((entry) => entry.record.type === "telemetry").map((entry) => entry.record.event),
+    [
+      "run_started",
+      "evidence_accepted",
+      "decision_made",
+      "quote_obtained",
+      "order_submitted",
+      "settlement_observed",
+      "redemption_observed",
+      "realized_pnl_observed",
+    ],
+  );
+  const pnl = entries.find((entry) => entry.record.event === "realized_pnl_observed")?.record as {
+    environment: string;
+    data: { realizedPnlTst: number };
+  };
+  assert.equal(pnl.environment, "test");
+  assert.equal(pnl.data.realizedPnlTst, 0.4);
 });
 
 test("marks unsupported reconciliation fields unavailable without inventing values", async () => {

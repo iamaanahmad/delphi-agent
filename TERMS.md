@@ -14,7 +14,7 @@ Live execution can approve tokens and submit public blockchain transactions. Blo
 
 ## Third-party services and data
 
-Settlement Edge depends on the Gensyn Delphi SDK, competition APIs and contracts, a configured RPC provider, optional Coinbase Developer Platform signing, and the primary JSON sources declared in each rule. Those services can change, fail, return stale or incorrect data, or apply separate terms.
+Settlement Edge depends on the Gensyn Delphi SDK, competition APIs and contracts, a configured RPC provider, optional Coinbase Developer Platform signing, the primary JSON sources declared in each rule, and an optional operator-configured PostHog metrics host. Those services can change, fail, return stale or incorrect data, or apply separate terms.
 
 How the agent handles operator and wallet data is described in the [Privacy notice](PRIVACY.md).
 

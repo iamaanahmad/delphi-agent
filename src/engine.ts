@@ -7,12 +7,14 @@ import {
   type Availability,
   type TransactionLedgerState,
 } from "./receipt.js";
+import { appendTelemetry, type TelemetryContext } from "./telemetry.js";
 import { estimateProbability, sizeTrade } from "./strategy.js";
 import type { Decision, EvidenceSignal, MarketView, RiskPolicy, TradingGateway, WalletBalanceSnapshot } from "./types.js";
 
 export interface EvaluationContext {
   receiptPath?: string;
   opportunityId?: string;
+  telemetry?: TelemetryContext;
 }
 
 function opportunityId(market: MarketView, outcomeIdx: number, evidence: EvidenceSignal[]): string {
@@ -48,9 +50,10 @@ async function record(
   after: Availability<WalletBalanceSnapshot> = unavailable("no order was submitted"),
 ): Promise<Decision> {
   const marketProbability = decision.market.probabilities[outcomeIdx];
-  await appendLedgerRecord({
+  const opportunity = context.opportunityId ?? opportunityId(decision.market, outcomeIdx, decision.evidence);
+  const sourceRecordHash = await appendLedgerRecord({
     type: "decision",
-    opportunityId: context.opportunityId ?? opportunityId(decision.market, outcomeIdx, decision.evidence),
+    opportunityId: opportunity,
     terminal: true,
     market: decision.market,
     outcomeIdx,
@@ -72,6 +75,34 @@ async function record(
     transaction,
     wallet: { before, after, changeTst: walletChange(before, after) },
   }, context.receiptPath);
+  if (context.telemetry) {
+    const base = {
+      ...context.telemetry,
+      marketId: decision.market.id,
+      opportunityId: opportunity,
+      sourceRecordHash,
+    };
+    for (const source of decision.evidence) {
+      await appendTelemetry({ ...base, event: "evidence_accepted", data: { sourceId: source.id } }, context.receiptPath);
+    }
+    await appendTelemetry({
+      ...base,
+      event: "decision_made",
+      data: { action: decision.action, sourceCount: decision.evidence.length, transactionStatus: transaction.status },
+    }, context.receiptPath);
+    if (decision.plan) {
+      await appendTelemetry({
+        ...base,
+        event: "quote_obtained",
+        data: { quoteCostTst: decision.plan.costTst, quoteShares: decision.plan.shares },
+      }, context.receiptPath);
+    }
+    if (transaction.status === "submitted") {
+      await appendTelemetry({ ...base, event: "order_submitted", data: { transactionStatus: transaction.status } }, context.receiptPath);
+    } else if (transaction.status === "ambiguous") {
+      await appendTelemetry({ ...base, event: "order_failed", data: { transactionStatus: transaction.status } }, context.receiptPath);
+    }
+  }
   return decision;
 }
 

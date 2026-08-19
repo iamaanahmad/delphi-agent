@@ -7,6 +7,7 @@ import {
   type DecisionLedgerRecord,
   type ReconciliationLedgerRecord,
 } from "./receipt.js";
+import { appendTelemetry, type TelemetryContext } from "./telemetry.js";
 import type {
   MarketSettlementSnapshot,
   PositionSnapshot,
@@ -96,6 +97,7 @@ export async function reconcileMarket(
   gateway: ReconciliationGateway,
   marketId: string,
   ledgerPath?: string,
+  telemetry?: TelemetryContext,
 ): Promise<ReconciliationLedgerRecord> {
   const envelopes = await readLedger(ledgerPath);
   const decisions = envelopes.flatMap((envelope) => {
@@ -141,6 +143,22 @@ export async function reconcileMarket(
     costBasisTst,
     realizedPnlTst,
   };
-  await appendLedgerRecord(record, ledgerPath);
+  const sourceRecordHash = await appendLedgerRecord(record, ledgerPath);
+  if (telemetry) {
+    const base = { ...telemetry, marketId, sourceRecordHash };
+    if (settlement.available) {
+      await appendTelemetry({ ...base, event: "settlement_observed", data: { settlementStatus: settlement.value.status } }, ledgerPath);
+    }
+    if (redemption.available) {
+      await appendTelemetry({
+        ...base,
+        event: "redemption_observed",
+        data: { redemptionStatus: redemption.value.status, tokensRedeemedTst: redemption.value.tokensRedeemedTst },
+      }, ledgerPath);
+    }
+    if (realizedPnlTst.available) {
+      await appendTelemetry({ ...base, event: "realized_pnl_observed", data: { realizedPnlTst: realizedPnlTst.value } }, ledgerPath);
+    }
+  }
   return record;
 }

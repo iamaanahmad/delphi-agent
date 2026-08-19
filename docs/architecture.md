@@ -36,6 +36,8 @@ The agent therefore treats `probability - price` as edge. It still sizes against
 
 Version 2 records preserve source publication and fetch times, the market probability, conservative estimate, executable quote, price impact, risk decision, transaction result, wallet balances, settlement status, positions, redemption, and realized P&L. Older version 1 decision receipts remain valid chain predecessors and are never rewritten.
 
+Version 2 also carries schema-versioned lifecycle telemetry for runs, evidence, decisions, quotes, orders, settlement, redemption, and realized P&L. The ledger remains authoritative. Optional project metrics verify the complete hash chain before export, use ledger hashes as idempotency keys, and keep live, dry-run, replay, and test environments separate. See [metrics.md](metrics.md).
+
 Source and schema failures are terminal records, so a failed fetch does not disappear before audit. Transaction responses that fail after a buy attempt are recorded as ambiguous and persisted in watcher state. Reconciliation uses observed wallet deltas for trade cost basis rather than treating the pre-trade quote as realized spend.
 
 ## Known limits
