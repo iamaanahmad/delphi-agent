@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Privacy notice for Settlement Edge.">
+    <meta name="theme-color" content="#080d18">
+    <title>Privacy notice | Settlement Edge</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="site.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav shell" aria-label="Primary navigation">
+        <a class="wordmark" href="./" aria-label="Settlement Edge home"><span class="wordmark-mark" aria-hidden="true"></span>Settlement Edge</a>
+        <div class="nav-links"><a href="./">Home</a><a href="terms.html">Terms</a><a href="https://github.com/iamaanahmad/delphi-agent">GitHub</a></div>
+      </nav>
+    </header>
+    <main class="legal-page shell">
+      <article class="legal-copy">
+        <p class="eyebrow">Settlement Edge</p>
+        <h1>Privacy notice</h1>
+        <p class="legal-meta">No hosted accounts, forms, cookies, advertising trackers, or project-operated database</p>
+        <p>Settlement Edge is a command-line competition agent. The credential-free replay uses only the checked-in fixture.</p>
+
+        <h2>Data the agent handles</h2>
+        <p>Live commands can handle the following operator data:</p>
+        <ul>
+          <li>wallet addresses, balances, positions, transaction hashes, market actions, and timestamps;</li>
+          <li>API keys, private keys, or Coinbase Developer Platform wallet credentials supplied through a local <code>.env</code> file;</li>
+          <li>local configuration, including market addresses, source URLs, risk limits, and file destinations; and</li>
+          <li>terminal output, decision receipts, reconciliation records, and watcher state created while the agent runs.</li>
+        </ul>
+        <p>Secrets are read by the official Delphi SDK from the local environment. Settlement Edge does not add secrets to receipts or print their values. A public wallet address and its on-chain activity are not secret.</p>
+
+        <h2>Where data goes</h2>
+        <p>Settlement Edge does not send data to a project-operated server. Depending on the command and signer configuration, it connects directly from the operator's machine to:</p>
+        <ul>
+          <li>the Gensyn Delphi API for competition markets and wallet-position queries;</li>
+          <li>the configured Gensyn RPC provider for wallet balance reads, quotes, approvals, and transactions;</li>
+          <li>Coinbase Developer Platform when the operator selects its server-wallet signer; and</li>
+          <li>the reviewed JSON evidence source named in each rule, currently NOAA or the MLS match feed.</li>
+        </ul>
+        <p>The wallet-position query includes the public wallet address. RPC reads and submitted transactions also use the public wallet address. Evidence requests include the source URL and the <code>settlement-edge/1.0</code> user-agent, but Settlement Edge does not add wallet credentials to those requests. These third-party services operate under their own terms and privacy notices.</p>
+
+        <h2>Local storage and deletion</h2>
+        <p>By default, credentials stay in the gitignored <code>.env</code> file. Decision and reconciliation history is stored in <code>artifacts/decision-receipts.jsonl</code>, and restart protection can be stored in <code>artifacts/watcher-state.json</code>. Operators can choose other local paths with the documented environment variables.</p>
+        <p>To remove local data, stop the agent and delete the applicable <code>.env</code>, receipt, and watcher-state files. Revoke or rotate provider credentials through the provider that issued them. Public blockchain transactions and wallet activity cannot be deleted by Settlement Edge.</p>
+        <p>The project does not set a retention period for files it does not control. Local files remain until the operator removes them, and third-party services apply their own retention practices.</p>
+
+        <h2>Contact</h2>
+        <p>Questions about this notice can be sent to <a href="mailto:dorahacks@mail.tin.computer">dorahacks@mail.tin.computer</a>.</p>
+      </article>
+    </main>
+    <footer class="site-footer"><div class="footer-inner shell"><div class="footer-links"><a href="./">Home</a><a href="terms.html">Terms</a><a href="mailto:dorahacks@mail.tin.computer">Contact</a></div><span>Built for the Delphi Agent Arena · <a class="tin-credit" href="https://tin.computer"><span class="tin-mark" aria-hidden="true"></span>Growth by Tin</a></span></div></footer>
+  </body>
+</html>

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Settlement Edge turns verified settlement facts into quote-aware, risk-capped decisions for the Gensyn Delphi Agent Arena.">
+    <meta name="theme-color" content="#080d18">
+    <meta property="og:title" content="Settlement Edge | Evidence-first competition trading">
+    <meta property="og:description" content="Trade the fact before the market prices it. Every evaluation leaves a hash-linked decision receipt.">
+    <meta property="og:type" content="website">
+    <title>Settlement Edge | Evidence-first competition trading</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="site.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav shell" aria-label="Primary navigation">
+        <a class="wordmark" href="./" aria-label="Settlement Edge home">
+          <span class="wordmark-mark" aria-hidden="true"></span>
+          Settlement Edge
+        </a>
+        <div class="nav-links">
+          <a href="#how-it-works">How it works</a>
+          <a href="#proof">Proof</a>
+          <a href="https://github.com/iamaanahmad/delphi-agent">GitHub</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero shell">
+        <div>
+          <p class="eyebrow">Gensyn Delphi Agent Arena</p>
+          <h1>Trade the fact before the market prices it.</h1>
+          <p class="hero-copy">Settlement Edge turns reviewed primary-source facts into conservative probabilities, tests them against live quotes, and acts only when the edge survives strict risk limits.</p>
+          <a class="primary-action" href="https://github.com/iamaanahmad/delphi-agent">View the open-source agent</a>
+          <a class="secondary-link" href="https://dorahacks.io/hackathon/delphi-agent-competition/detail">See the Delphi competition →</a>
+        </div>
+        <figure class="receipt-frame">
+          <img src="settlement-edge-demo.svg" alt="Simulated Settlement Edge decision receipt with a 37.7 percentage-point edge and a dry-run buy">
+        </figure>
+      </section>
+
+      <section class="status-strip" aria-labelledby="observed-status">
+        <div class="status-inner shell">
+          <div class="status-copy">
+            <p class="status-label" id="observed-status">Observed competition status</p>
+            <p>The decision loop is proven locally. No live order, settlement, redemption, or realized competition profit has been observed yet.</p>
+          </div>
+          <div class="metric">
+            <strong>0</strong>
+            <span>live orders</span>
+          </div>
+          <div class="metric">
+            <strong>0 TST</strong>
+            <span>realized competition P&amp;L</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section shell" id="how-it-works">
+        <div class="section-intro">
+          <div>
+            <p class="eyebrow">One auditable loop</p>
+            <h2>Evidence first. Execution last.</h2>
+          </div>
+          <p>Most agents begin with an opinion. Settlement Edge begins with a declared source and exact settlement rule, then makes execution earn its way through the rest of the pipeline.</p>
+        </div>
+        <div class="pipeline" aria-label="Settlement Edge decision pipeline">
+          <article class="pipeline-step">
+            <span class="step-number">01</span>
+            <div><h3>Verify</h3><p>Reject malformed, stale, future-dated, or off-rule evidence.</p></div>
+          </article>
+          <article class="pipeline-step">
+            <span class="step-number">02</span>
+            <div><h3>Estimate</h3><p>Shrink confidence when sources disagree or the signal weakens.</p></div>
+          </article>
+          <article class="pipeline-step">
+            <span class="step-number">03</span>
+            <div><h3>Quote</h3><p>Price several tiny sizes on the competition LMSR curve.</p></div>
+          </article>
+          <article class="pipeline-step">
+            <span class="step-number">04</span>
+            <div><h3>Gate</h3><p>Cap spend, bankroll share, price impact, and slippage.</p></div>
+          </article>
+          <article class="pipeline-step">
+            <span class="step-number">05</span>
+            <div><h3>Record</h3><p>Hash-link the fact, price, policy, and final decision.</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section contrast-section" id="proof">
+        <div class="proof-layout shell">
+          <div class="proof-copy">
+            <p class="eyebrow">Proof without performance theatre</p>
+            <h2>Simulation and reality stay separate.</h2>
+            <p>The credential-free replay proves the mechanics without claiming leaderboard performance. Live profit is recorded only after submitted cost basis and completed redemption are both observed.</p>
+          </div>
+          <div class="proof-panel">
+            <article class="proof-block">
+              <p class="proof-kicker">Observed competition result</p>
+              <span class="proof-value">0 TST</span>
+              <p>Realized P&amp;L from 0 live orders. This is the current competition result.</p>
+            </article>
+            <article class="proof-block simulated">
+              <p class="proof-kicker">Simulated replay result</p>
+              <span class="proof-value">+1.4292 TST</span>
+              <p>Expected P&amp;L on a 2.5200 TST simulated cost. No order was submitted.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section shell">
+        <div class="safety-layout">
+          <div class="safety-copy">
+            <p class="eyebrow">Fail-closed by design</p>
+            <h2>A weak edge becomes no trade.</h2>
+            <p>Dry-run is the default. Live execution needs two explicit switches, a registered and funded competition wallet, passing evidence, and an executable quote inside every cap.</p>
+            <p><a href="https://github.com/iamaanahmad/delphi-agent/blob/main/docs/architecture.md">Read the architecture and safety boundaries →</a></p>
+          </div>
+          <ul class="safety-list">
+            <li><span>✓</span><div><strong>Primary-source rules</strong><br>Exact sources, timestamps, thresholds, and outcomes are reviewed before use.</div></li>
+            <li><span>✓</span><div><strong>Quote-aware sizing</strong><br>Candidate sizes must remain profitable after price impact and portfolio limits.</div></li>
+            <li><span>✓</span><div><strong>Restart-safe receipts</strong><br>Duplicate and ambiguous-order protection survives watcher restarts.</div></li>
+            <li><span>✓</span><div><strong>Read-only preflight</strong><br>Nine launch gates are reported separately without approving or submitting an order.</div></li>
+          </ul>
+        </div>
+        <p class="source-note"><strong>Reviewed live sources:</strong> NOAA CO-OPS water levels and the official MLS schedule feed. Reviewed means the source mapping was checked; it does not guarantee a profitable trade.</p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner shell">
+        <div class="footer-links">
+          <a href="terms.html">Terms</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="mailto:dorahacks@mail.tin.computer">Contact</a>
+          <a href="https://github.com/iamaanahmad/delphi-agent">Repository</a>
+        </div>
+        <span>Built for the Delphi Agent Arena · <a class="tin-credit" href="https://tin.computer"><span class="tin-mark" aria-hidden="true"></span>Growth by Tin</a></span>
+      </div>
+    </footer>
+  </body>
+</html>

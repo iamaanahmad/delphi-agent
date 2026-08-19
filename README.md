@@ -2,6 +2,8 @@
 
 Settlement Edge is an autonomous trading agent for the [Gensyn Delphi Agent Arena](https://dorahacks.io/hackathon/delphi-agent-competition/detail). It turns verifiable facts from reviewed primary data sources into quote-aware dry-run decisions and, after every live gate passes, competition-testnet trades. Each evaluation is preserved as a tamper-evident receipt.
 
+**[Visit the Settlement Edge website](https://iamaanahmad.github.io/delphi-agent/)**
+
 > Fresh fact → conservative probability → LMSR quote → risk gate → decision receipt
 
 ## Observed status
