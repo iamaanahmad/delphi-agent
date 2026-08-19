@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Compare a prediction market trading agent with a forecasting agent, including when settlement evidence, live quotes, and risk gates change the job.">
+    <meta name="theme-color" content="#080d18">
+    <meta property="og:title" content="Prediction market trading agent vs forecasting agent | Settlement Edge">
+    <meta property="og:description" content="Forecasting estimates what is likely. Trading must also decide whether an executable quote is wrong enough to act on.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://iamaanahmad.github.io/delphi-agent/prediction-market-trading-agent-vs-forecasting-agent.html">
+    <title>Prediction market trading agent vs forecasting agent | Settlement Edge</title>
+    <link rel="canonical" href="https://iamaanahmad.github.io/delphi-agent/prediction-market-trading-agent-vs-forecasting-agent.html">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="site.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav shell" aria-label="Primary navigation">
+        <a class="wordmark" href="./" aria-label="Settlement Edge home"><span class="wordmark-mark" aria-hidden="true"></span>Settlement Edge</a>
+        <div class="nav-links"><a href="./">Home</a><a href="#comparison">Comparison</a><a href="https://github.com/iamaanahmad/delphi-agent">GitHub</a></div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="article-hero shell">
+        <div class="article-hero-copy">
+          <p class="eyebrow">Prediction market agent guide</p>
+          <h1>Forecasting asks what is likely. Trading asks whether a quote is wrong.</h1>
+          <p class="hero-copy">A forecast can stop at a probability. A prediction market trading agent still has to price an executable order, survive liquidity and risk limits, and leave a record of why it acted.</p>
+          <a class="primary-action" href="https://github.com/iamaanahmad/delphi-agent">Inspect the open-source decision loop</a>
+        </div>
+        <figure class="article-visual receipt-frame">
+          <img src="settlement-edge-demo.svg" alt="A simulated Settlement Edge decision receipt showing evidence, a quote, risk gates, and a dry-run decision">
+          <figcaption>Simulated receipt. It proves the local decision path, not live competition profit.</figcaption>
+        </figure>
+      </section>
+
+      <section class="article-fact-strip">
+        <div class="shell fact-grid">
+          <p><strong>The useful distinction:</strong> forecasting estimates an outcome; trading decides whether a specific order is worth taking now.</p>
+          <p><strong>Settlement Edge today:</strong> 0 live orders and 0 TST realized competition P&amp;L.</p>
+        </div>
+      </section>
+
+      <article class="article-body shell">
+        <section class="article-section" id="comparison">
+          <div class="article-heading">
+            <p class="eyebrow">The short answer</p>
+            <h2>Probability is an input, not the finish line.</h2>
+          </div>
+          <div class="article-prose">
+            <p>A forecasting agent researches a question and returns a probability or categorical answer. That output can be useful without any market access.</p>
+            <p>A trading agent must turn the estimate into a decision against a live price. It needs to know what one or more shares cost, how that order moves the price, how much capital is exposed, and whether the expected edge remains after those constraints.</p>
+          </div>
+        </section>
+
+        <section class="comparison-block" aria-labelledby="job-by-job">
+          <h2 id="job-by-job">The job, side by side</h2>
+          <div class="comparison-table-wrap">
+            <table class="comparison-table">
+              <thead><tr><th scope="col">Decision</th><th scope="col">Forecasting agent</th><th scope="col">Trading agent</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Primary output</th><td>A probability, forecast, or answer</td><td>A buy, sell, hold, or no-trade decision</td></tr>
+                <tr><th scope="row">Market price</th><td>Useful as a baseline or comparison</td><td>Required to judge whether an order has edge</td></tr>
+                <tr><th scope="row">Liquidity</th><td>Usually outside the forecasting task</td><td>Changes cost, impact, and viable order size</td></tr>
+                <tr><th scope="row">Risk</th><td>Often scored by forecast accuracy or calibration</td><td>Also bounded by spend, exposure, slippage, and execution failure</td></tr>
+                <tr><th scope="row">Timing</th><td>Can be valuable well before resolution</td><td>Must act while the quote is still mispriced</td></tr>
+                <tr><th scope="row">Audit trail</th><td>Should preserve sources and reasoning</td><td>Should also preserve the quote, size, policy gates, and transaction state</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="article-section">
+          <div class="article-heading">
+            <p class="eyebrow">Where settlement evidence fits</p>
+            <h2>Use narrow facts when the resolution rule is narrow.</h2>
+          </div>
+          <div class="article-prose">
+            <p>Some markets resolve from a specific public observation: a reported tide level, a match result, a published index value, or another machine-readable fact. In those cases, the hard part may be precise extraction and timing rather than broad world-model research.</p>
+            <p>Settlement Edge is built for that narrow case. Each reviewed rule names a source, the value to extract, its timestamp requirements, and the outcome mapping. Invalid, stale, future-dated, or off-rule evidence fails closed.</p>
+            <p>This approach is a poor fit for questions that depend on ambiguous wording, disputed interpretation, or information that cannot be mapped to a stable primary source.</p>
+          </div>
+        </section>
+
+        <section class="decision-ladder" aria-labelledby="ladder-title">
+          <div>
+            <p class="eyebrow">A trading decision earns its way through</p>
+            <h2 id="ladder-title">Five gates after the fact arrives.</h2>
+          </div>
+          <ol>
+            <li><span>01</span><div><strong>Validate the evidence</strong><p>Reject the observation if its source, shape, time, or rule mapping is unsafe.</p></div></li>
+            <li><span>02</span><div><strong>Estimate conservatively</strong><p>Shrink confidence toward the market when signals disagree or weaken.</p></div></li>
+            <li><span>03</span><div><strong>Request executable quotes</strong><p>Test small candidate sizes on the actual market curve.</p></div></li>
+            <li><span>04</span><div><strong>Apply risk limits</strong><p>Reject spend, portfolio share, price impact, or slippage outside the caps.</p></div></li>
+            <li><span>05</span><div><strong>Record the result</strong><p>Hash-link the source, estimate, quote, gate result, and later lifecycle state.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="article-section">
+          <div class="article-heading">
+            <p class="eyebrow">What the replay proves</p>
+            <h2>Mechanics are observed. Performance is not.</h2>
+          </div>
+          <div class="article-prose">
+            <p>The checked-in replay runs the full evidence-to-decision loop without credentials. In that simulation, a four-share plan cost 2.5200 TST and showed 1.4292 TST expected P&amp;L.</p>
+            <p>No order was submitted. Settlement Edge has not yet observed a live order, completed redemption, or realized competition profit. The project records realized P&amp;L only after both submitted cost basis and completed redemption are present.</p>
+          </div>
+        </section>
+
+        <aside class="article-next">
+          <div><p class="eyebrow">Compare implementations</p><h2>Settlement Edge vs Gnosis Prediction Market Agent</h2><p>See how a narrow Delphi settlement trader differs from a broad multi-venue agent library.</p></div>
+          <a href="settlement-edge-vs-gnosis-prediction-market-agent.html">Read the implementation comparison →</a>
+        </aside>
+
+        <section class="sources" aria-labelledby="sources-title">
+          <h2 id="sources-title">Sources</h2>
+          <ul>
+            <li><a href="https://github.com/iamaanahmad/delphi-agent">Settlement Edge repository and tests</a></li>
+            <li><a href="https://github.com/iamaanahmad/delphi-agent/blob/main/docs/architecture.md">Settlement Edge architecture and safety boundaries</a></li>
+            <li><a href="https://github.com/iamaanahmad/delphi-agent/blob/main/docs/live-market-rules.md">Reviewed live-market rules</a></li>
+          </ul>
+          <p>Product state checked August 19, 2026.</p>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer"><div class="footer-inner shell"><div class="footer-links"><a href="./">Home</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a><a href="mailto:dorahacks@mail.tin.computer">Contact</a></div><span>Built for the Delphi Agent Arena · <a class="tin-credit" href="https://tin.computer"><span class="tin-mark" aria-hidden="true"></span>Growth by Tin</a></span></div></footer>
+  </body>
+</html>
