@@ -2,10 +2,13 @@ import { DelphiClient } from "@gensyn-ai/gensyn-delphi-sdk";
 import type {
   MarketSettlementSnapshot,
   MarketView,
+  PortfolioPositionSnapshot,
   PositionSnapshot,
   Quote,
   TradePlan,
   TradingGateway,
+  SettlementExecution,
+  SettlementQuote,
   WalletBalanceSnapshot,
 } from "./types.js";
 
@@ -95,15 +98,62 @@ export class DelphiGateway implements TradingGateway {
   }
 
   async listWalletPositions(marketId: string, walletAddress: string): Promise<PositionSnapshot[]> {
+    return (await this.listPortfolioPositions(walletAddress))
+      .filter((position) => position.marketId.toLowerCase() === marketId.toLowerCase())
+      .map(({ marketId: _marketId, ...position }) => position);
+  }
+
+  async listPortfolioPositions(walletAddress: string): Promise<PortfolioPositionSnapshot[]> {
     const { positions } = await this.client.listPositions({ wallet: walletAddress, limit: 100 });
     return (positions ?? [])
-      .filter((position) => position.marketProxy.toLowerCase() === marketId.toLowerCase())
       .map((position) => ({
+        marketId: position.marketProxy,
         outcomeIdx: Number(position.outcomeIdx),
         sharesAtomic: position.shares,
         redeemedOrLiquidated: position.redeemedOrLiquidated,
         tokensRedeemedAtomic: position.tokensRedeemed,
       }));
+  }
+
+  async quoteRedemption(marketId: string, walletAddress: string): Promise<SettlementQuote> {
+    const quote = await this.client.quoteRedeem({
+      marketAddress: marketId as `0x${string}`,
+      account: walletAddress as `0x${string}`,
+    });
+    return { sharesAtomic: [quote.sharesIn.toString()], tokensOutAtomic: quote.tokensOut.toString() };
+  }
+
+  async quoteLiquidation(marketId: string, outcomeIndices: number[], walletAddress: string): Promise<SettlementQuote> {
+    const quote = await this.client.quoteLiquidate({
+      marketAddress: marketId as `0x${string}`,
+      outcomeIndices,
+      account: walletAddress as `0x${string}`,
+    });
+    return {
+      sharesAtomic: quote.sharesIn.map((shares) => shares.toString()),
+      tokensOutAtomic: quote.totalTokensOut.toString(),
+    };
+  }
+
+  async redeem(marketId: string): Promise<SettlementExecution> {
+    const result = await this.client.redeemMarket({ marketAddress: marketId as `0x${string}` });
+    return {
+      transactionHash: result.transactionHash,
+      sharesAtomic: [result.sharesIn.toString()],
+      tokensOutAtomic: result.tokensOut.toString(),
+    };
+  }
+
+  async liquidate(marketId: string, outcomeIndices: number[]): Promise<SettlementExecution> {
+    const result = await this.client.liquidate({
+      marketAddress: marketId as `0x${string}`,
+      outcomeIndices,
+    });
+    return {
+      transactionHash: result.transactionHash,
+      sharesAtomic: result.sharesIn.map((shares) => shares.toString()),
+      tokensOutAtomic: result.totalTokensOut.toString(),
+    };
   }
 }
 

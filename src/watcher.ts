@@ -5,6 +5,7 @@ import { evaluateMarket } from "./engine.js";
 import { fetchEvidence } from "./evidence.js";
 import { appendLedgerRecord, available, unavailable } from "./receipt.js";
 import { appendTelemetry, type TelemetryContext } from "./telemetry.js";
+import { assessRuleTiming } from "./rule-timing.js";
 import type { Decision, EvidenceSignal, ResolutionRule, RiskPolicy, TradingGateway } from "./types.js";
 
 export const DEFAULT_POLL_INTERVAL_MS = 60_000;
@@ -23,6 +24,7 @@ export type WatcherStatus =
   | { type: "cycle"; marketCount: number; ruleGroupCount: number }
   | { type: "duplicate"; key: string }
   | { type: "missing-market"; marketId: string }
+  | { type: "infeasible-rule"; marketId: string; reason: string }
   | { type: "retry"; delayMs: number; error: Error }
   | { type: "ambiguous-order"; key: string; error: Error }
   | { type: "stopped" };
@@ -212,6 +214,21 @@ export async function runWatcherCycle(options: WatcherOptions): Promise<void> {
     if (!market) {
       options.onStatus?.({ type: "missing-market", marketId: first.marketId });
       await recordOpportunityFailure(undefined, groupedRules, createHash("sha256").update(JSON.stringify(groupedRules)).digest("hex"), "open competition market not found", "market", options.receiptPath, { status: "not_submitted" }, telemetry);
+      continue;
+    }
+    const timing = assessRuleTiming(first, market);
+    if (!timing.feasible) {
+      options.onStatus?.({ type: "infeasible-rule", marketId: first.marketId, reason: timing.reason });
+      await recordOpportunityFailure(
+        market,
+        groupedRules,
+        createHash("sha256").update(JSON.stringify({ groupedRules, resolvesAt: market.resolvesAt })).digest("hex"),
+        `rule timing is not tradable: ${timing.reason}`,
+        "market",
+        options.receiptPath,
+        { status: "not_submitted" },
+        telemetry,
+      );
       continue;
     }
 

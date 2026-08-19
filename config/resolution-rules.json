@@ -43,6 +43,7 @@
         "threshold": "finalWhistle"
       }
     ],
-    "maxFreshnessAgeMinutes": 240
+    "maxFreshnessAgeMinutes": 240,
+    "earliestDecisionAt": "2026-08-20T00:00:00Z"
   }
 ]

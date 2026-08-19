@@ -6,6 +6,14 @@ const numeric = (name: string, fallback: number): number => {
   return value;
 };
 
+export function parseCandidateShares(value = "0.05,0.1,0.25,0.5,1,2,4,8"): number[] {
+  const candidates = [...new Set(value.split(",").map((item) => Number(item.trim())))].sort((a, b) => a - b);
+  if (candidates.length === 0 || candidates.some((item) => !Number.isFinite(item) || item <= 0)) {
+    throw new Error("SETTLEMENT_EDGE_CANDIDATE_SHARES must be a comma-separated list of positive numbers");
+  }
+  return candidates;
+}
+
 export function loadRiskPolicy(): RiskPolicy {
   return {
     bankrollTst: numeric("SETTLEMENT_EDGE_BANKROLL_TST", 100),
@@ -16,7 +24,7 @@ export function loadRiskPolicy(): RiskPolicy {
     maxPriceImpact: numeric("SETTLEMENT_EDGE_MAX_PRICE_IMPACT", 0.03),
     maxSourceAgeMinutes: numeric("SETTLEMENT_EDGE_MAX_SOURCE_AGE_MINUTES", 15),
     slippagePct: numeric("SETTLEMENT_EDGE_SLIPPAGE_PCT", 2),
-    candidateShares: [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8],
+    candidateShares: parseCandidateShares(process.env.SETTLEMENT_EDGE_CANDIDATE_SHARES),
   };
 }
 

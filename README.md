@@ -96,6 +96,7 @@ This is competition testnet software using play-money TST, not financial advice 
 - Optional server-side lifecycle metrics derived from the verified ledger, with separate live, dry-run, replay, and test namespaces. Expected replay P&L is never counted as realized profit.
 - Persistent duplicate and ambiguous-order protection across watcher restarts.
 - Read-only reconciliation that reports unsupported or unavailable SDK fields explicitly.
+- Dry-run-first portfolio settlement that routes settled markets to redemption and expired or failed markets to liquidation.
 - Deterministic replay with no API, wallet, gas, or network dependency.
 
 ## Setup instructions
@@ -151,7 +152,7 @@ npm run agent -- config/resolution-rules.json
 
 That command fetches the declared primary source, evaluates freshness, joins the open market, requests quotes, and prints a dry-run decision. It submits only when both live switches in `.env` are set to `true`.
 
-The repository includes two active reviewed competition mappings for NOAA and MLS in `config/resolution-rules.json`. The settled Wikimedia mapping remains in [live-market-rules.md](docs/live-market-rules.md) as historical documentation. Reviewed means the source mapping was checked; it does not mean a trade will have positive expected value.
+The repository includes two reviewed competition mappings for NOAA and MLS in `config/resolution-rules.json`. Both are rejected by the pre-close timing gate: NOAA's evidence window starts after the market closes, while the MLS result cannot be decisive before its market closes. The settled Wikimedia mapping remains in [live-market-rules.md](docs/live-market-rules.md) as historical documentation. Reviewed means the source mapping was checked; it does not mean the market is tradable or has positive expected value.
 
 For continuous monitoring, run the watcher. It reloads the rule file, open markets, and evidence every 60 seconds by default:
 
@@ -173,6 +174,14 @@ npm run reconcile -- 0xMARKET_ADDRESS
 
 The command reads the signer balance, on-chain market status, indexed winner, and wallet positions through the official SDK. It computes realized P&L only when the ledger contains observed before-and-after trade balances and the SDK reports a completed redemption. Missing history and unsupported fields are recorded as unavailable rather than replaced with estimates. The command never redeems, liquidates, approves, or trades.
 
+To sweep eligible positions, quote every exit first, and append the result to the same ledger:
+
+```bash
+npm run settle
+```
+
+The sweep is dry-run by default. It redeems settled markets and liquidates expired or failed markets only when both `ALLOW_LIVE_TRADING=true` and `SETTLEMENT_EDGE_EXECUTE=true`. Open markets are skipped, quote failures fail closed, and an ambiguous transaction blocks an automatic retry until the ledger is inspected. Submitted exits are immediately reconciled so realized P&L is recorded only from observed wallet state.
+
 See [demo-script.md](docs/demo-script.md) for the 90-second judge walkthrough.
 
 ## Demo instructions
@@ -192,11 +201,12 @@ Run `npm run demo`. The fixture supplies a 61% market and a simulated Wikimedia 
 - [x] Explicit two-switch live-order gate
 - [x] Deterministic credential-free replay
 - [x] Continuous 60-second watcher with retry, shutdown, and duplicate-order protection
-- [x] Two open reviewed live-market mappings with offline source fixtures and one retired historical mapping
+- [x] Two reviewed live-market mappings with offline source fixtures, explicit timing rejection, and one retired historical mapping
 - [x] Stale-data, disagreement, low-edge, and quote-failure stops
 - [x] Hash-linked decision receipts
 - [x] Restart-safe duplicate and ambiguous-order state
 - [x] Read-only settlement, redemption, wallet, and realized-P&L reconciliation in code and fixtures
+- [x] Dry-run-first redemption and failed-market liquidation with hash-linked receipts
 - [x] Type checking, unit tests, and GitHub Actions
 - [ ] Register the trading wallet on DoraHacks
 - [ ] Add the testnet Delphi API key and signer only to local `.env`
@@ -213,9 +223,9 @@ Shallow liquidity can make even modest orders move the curve or revert. Rather t
 
 ## Future roadmap
 
-1. Register the exact signer wallet and verify leaderboard inclusion with a tiny trade.
-2. Expand reviewed rule coverage as new objective JSON-backed markets open.
-3. Add explicitly authorized redemption and failed-market liquidation after the first read-only reconciliation is observed.
+1. Fund the exact registered signer with competition TST and verify leaderboard inclusion with a tiny eligible trade.
+2. Add at least one reviewed rule whose decisive source fact can arrive before its market closes.
+3. Exercise guarded redemption after the first eligible live position settles.
 4. Confirm and encode the organizer's unpublished trade and market activity thresholds.
 
 ## Impact
@@ -240,6 +250,7 @@ src/gateway.ts    Official Delphi SDK and deterministic replay gateways
 src/receipt.ts    Backward-compatible hash-linked lifecycle ledger
 src/metrics.ts    Verified ledger-to-project-metrics ingestion
 src/reconciliation.ts Read-only settlement and realized-P&L reconciliation
+src/settlement.ts Guarded redemption and failed-market liquidation
 fixtures/         Credential-free judge replay
 tests/            Risk, evidence, strategy, and engine checks
 docs/             Architecture, demo, and submission plan

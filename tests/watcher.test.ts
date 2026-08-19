@@ -14,6 +14,7 @@ const market: MarketView = {
   probabilities: [0.6, 0.4],
   prices: [0.6, 0.4],
   status: "open",
+  resolvesAt: "2026-08-20T00:00:00.000Z",
 };
 const rule: ResolutionRule = {
   marketId: market.id,
@@ -25,6 +26,7 @@ const rule: ResolutionRule = {
   threshold: 100,
   eventAtPath: "event_at",
   freshness: { type: "retrieval" },
+  earliestDecisionAt: "2026-08-18T00:00:00.000Z",
 };
 const evidence: EvidenceSignal = {
   id: "primary",

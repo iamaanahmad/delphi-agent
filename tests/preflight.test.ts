@@ -10,6 +10,7 @@ const market: MarketView = {
   probabilities: [0.5, 0.5],
   prices: [0.5, 0.5],
   status: "open",
+  resolvesAt: "2026-08-20T00:00:00Z",
 };
 
 const rule: ResolutionRule = {
@@ -22,6 +23,7 @@ const rule: ResolutionRule = {
   threshold: 1,
   eventAtPath: "event_at",
   freshness: { type: "retrieval" },
+  earliestDecisionAt: "2026-08-19T00:00:00Z",
 };
 
 const readyEnv: NodeJS.ProcessEnv = {
@@ -67,6 +69,7 @@ test("reports every gate and passes a fully mocked read-only path", async () => 
     "TST funds",
     "Reviewed rules",
     "Execution switches",
+    "Rule timing",
     "Quote availability",
     "Receipt storage",
   ]);
@@ -116,6 +119,15 @@ test("fails closed when a reviewed rule has no freshness source", async () => {
   const invalid = { ...rule, freshness: undefined } as unknown as ResolutionRule;
   const results = await run(new FixtureProbe(), { loadRules: async () => [invalid] });
   assert.equal(results.find((result) => result.gate === "Reviewed rules")?.status, "fail");
+  assert.equal(preflightPassed(results), false);
+});
+
+test("fails when decisive evidence cannot arrive before market close", async () => {
+  const impossible = { ...rule, earliestDecisionAt: market.resolvesAt };
+  const results = await run(new FixtureProbe(), { loadRules: async () => [impossible] });
+  const timing = results.find((result) => result.gate === "Rule timing");
+  assert.equal(timing?.status, "fail");
+  assert.match(timing?.detail ?? "", /not before market close/);
   assert.equal(preflightPassed(results), false);
 });
 
