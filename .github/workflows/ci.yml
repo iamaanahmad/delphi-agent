@@ -22,3 +22,4 @@ jobs:
       - run: npm run check
       - run: npm run demo
       - run: npm run validate:submission
+      - run: npm run validate:site
