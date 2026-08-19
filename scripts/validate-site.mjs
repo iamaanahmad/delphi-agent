@@ -52,6 +52,22 @@ for (const text of requiredIndexText) {
   }
 }
 
+const privacy = await readFile(resolve(root, "docs/privacy.html"), "utf8");
+for (const text of [
+  "Optional lifecycle metrics are disabled by default",
+  "does not include wallet addresses, balances, transaction hashes, source URLs, source identifiers, credentials, or free-form failure text",
+  "Dry-run, replay, and test events use separate event names and remain outside live competition totals",
+]) {
+  if (!privacy.includes(text)) {
+    throw new Error(`docs/privacy.html is missing required telemetry disclosure: ${text}`);
+  }
+}
+
+const terms = await readFile(resolve(root, "docs/terms.html"), "utf8");
+if (!terms.includes("optional operator-configured PostHog metrics host")) {
+  throw new Error("docs/terms.html is missing its optional metrics dependency disclosure");
+}
+
 const searchPages = [
   {
     path: "docs/prediction-market-trading-agent-vs-forecasting-agent.html",

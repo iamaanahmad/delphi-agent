@@ -25,7 +25,7 @@
         <p class="eyebrow">Settlement Edge</p>
         <h1>Privacy notice</h1>
         <p class="legal-meta">No hosted accounts, forms, cookies, advertising trackers, or project-operated database</p>
-        <p>Settlement Edge is a command-line competition agent. The credential-free replay uses only the checked-in fixture.</p>
+        <p>Settlement Edge is a command-line competition agent. The credential-free replay uses only the checked-in fixture. Optional lifecycle metrics are disabled by default and require explicit local configuration.</p>
 
         <h2>Data the agent handles</h2>
         <p>Live commands can handle the following operator data:</p>
@@ -35,6 +35,7 @@
           <li>local configuration, including market addresses, source URLs, risk limits, and file destinations; and</li>
           <li>terminal output, decision receipts, reconciliation records, and watcher state created while the agent runs.</li>
         </ul>
+        <p>When optional lifecycle metrics are enabled, Settlement Edge sends bounded run, market, decision, settlement, redemption, and realized-P&amp;L state to the configured PostHog ingestion host. The metrics payload does not include wallet addresses, balances, transaction hashes, source URLs, source identifiers, credentials, or free-form failure text. Dry-run, replay, and test events use separate event names and remain outside live competition totals.</p>
         <p>Secrets are read by the official Delphi SDK from the local environment. Settlement Edge does not add secrets to receipts or print their values. A public wallet address and its on-chain activity are not secret.</p>
 
         <h2>Where data goes</h2>
@@ -43,13 +44,14 @@
           <li>the Gensyn Delphi API for competition markets and wallet-position queries;</li>
           <li>the configured Gensyn RPC provider for wallet balance reads, quotes, approvals, and transactions;</li>
           <li>Coinbase Developer Platform when the operator selects its server-wallet signer; and</li>
-          <li>the reviewed JSON evidence source named in each rule, currently NOAA or the MLS match feed.</li>
+          <li>the reviewed JSON evidence source named in each rule, currently NOAA or the MLS match feed; and</li>
+          <li>the configured PostHog ingestion host, only when optional lifecycle metrics are explicitly enabled.</li>
         </ul>
-        <p>The wallet-position query includes the public wallet address. RPC reads and submitted transactions also use the public wallet address. Evidence requests include the source URL and the <code>settlement-edge/1.0</code> user-agent, but Settlement Edge does not add wallet credentials to those requests. These third-party services operate under their own terms and privacy notices.</p>
+        <p>The wallet-position query includes the public wallet address. RPC reads and submitted transactions also use the public wallet address. Evidence requests include the source URL and the <code>settlement-edge/1.0</code> user-agent, but Settlement Edge does not add wallet credentials to those requests. Optional metrics use a fixed CLI identifier rather than a wallet or person identifier. These third-party services operate under their own terms and privacy notices.</p>
 
         <h2>Local storage and deletion</h2>
         <p>By default, credentials stay in the gitignored <code>.env</code> file. Decision and reconciliation history is stored in <code>artifacts/decision-receipts.jsonl</code>, and restart protection can be stored in <code>artifacts/watcher-state.json</code>. Operators can choose other local paths with the documented environment variables.</p>
-        <p>To remove local data, stop the agent and delete the applicable <code>.env</code>, receipt, and watcher-state files. Revoke or rotate provider credentials through the provider that issued them. Public blockchain transactions and wallet activity cannot be deleted by Settlement Edge.</p>
+        <p>To remove local data, stop the agent and delete the applicable <code>.env</code>, receipt, and watcher-state files. Revoke or rotate provider credentials through the provider that issued them. Disable metrics by removing the metrics variables or setting <code>SETTLEMENT_EDGE_METRICS_ENABLED=false</code>. Public blockchain transactions and wallet activity cannot be deleted by Settlement Edge. Metrics already sent to a configured provider must be removed under that provider's deletion process.</p>
         <p>The project does not set a retention period for files it does not control. Local files remain until the operator removes them, and third-party services apply their own retention practices.</p>
 
         <h2>Contact</h2>
