@@ -1,0 +1,25 @@
+# Settlement Edge
+
+> Settlement Edge is an open-source TypeScript command-line agent for the Gensyn Delphi Agent Arena. It turns reviewed, machine-readable settlement facts into quote-aware, risk-capped competition decisions and hash-linked receipts.
+
+The credential-free decision loop is proven locally. Settlement Edge has observed 0 live orders and 0 TST realized competition profit. Its checked replay is a simulation, not live performance.
+
+## Core project
+
+- [Source repository](https://github.com/iamaanahmad/delphi-agent): Code, setup, safety boundaries, tests, and current observed status.
+- [Architecture](https://github.com/iamaanahmad/delphi-agent/blob/main/docs/architecture.md): Evidence validation, estimation, quote-aware sizing, execution gates, and receipt design.
+- [Reviewed market rules](https://github.com/iamaanahmad/delphi-agent/blob/main/docs/live-market-rules.md): Exact primary sources and fail-closed outcome mappings.
+- [Terms of use](https://iamaanahmad.github.io/delphi-agent/terms.html): Competition-testnet scope, operator responsibilities, and third-party dependencies.
+- [Privacy notice](https://iamaanahmad.github.io/delphi-agent/privacy.html): Local data handling, provider transfers, storage, and deletion.
+
+## Guides
+
+- [Prediction market trading agent vs forecasting agent](https://iamaanahmad.github.io/delphi-agent/prediction-market-trading-agent-vs-forecasting-agent.html): When settlement evidence, live quotes, and risk gates change the job.
+- [Settlement Edge vs Gnosis Prediction Market Agent](https://iamaanahmad.github.io/delphi-agent/settlement-edge-vs-gnosis-prediction-market-agent.html): A narrow Delphi settlement trader compared with a broader multi-venue agent library.
+
+## Operational boundaries
+
+- Dry-run is the default.
+- Live execution requires two explicit switches, a registered and funded competition wallet, a Delphi access key, passing evidence, and an executable quote inside every risk cap.
+- Settlement Edge is competition-testnet software using play-money TST. It is not financial advice or a mainnet trading system.
+- Realized profit is recorded only after submitted cost basis and completed redemption are both observed.
