@@ -148,7 +148,7 @@ npm run agent -- config/resolution-rules.json
 
 That command fetches the declared primary source, evaluates freshness, joins the open market, requests quotes, and prints a dry-run decision. It submits only when both live switches in `.env` are set to `true`.
 
-The repository includes three reviewed competition mappings for Wikimedia, NOAA, and MLS in `config/resolution-rules.json`. Their exact settlement boundaries and source paths are recorded in [live-market-rules.md](docs/live-market-rules.md). Reviewed means the source mapping was checked; it does not mean a trade will have positive expected value.
+The repository includes two active reviewed competition mappings for NOAA and MLS in `config/resolution-rules.json`. The settled Wikimedia mapping remains in [live-market-rules.md](docs/live-market-rules.md) as historical documentation. Reviewed means the source mapping was checked; it does not mean a trade will have positive expected value.
 
 For continuous monitoring, run the watcher. It reloads the rule file, open markets, and evidence every 60 seconds by default:
 
@@ -189,7 +189,7 @@ Run `npm run demo`. The fixture supplies a 61% market and a simulated Wikimedia 
 - [x] Explicit two-switch live-order gate
 - [x] Deterministic credential-free replay
 - [x] Continuous 60-second watcher with retry, shutdown, and duplicate-order protection
-- [x] Three reviewed live-market mappings with offline source fixtures
+- [x] Two open reviewed live-market mappings with offline source fixtures and one retired historical mapping
 - [x] Stale-data, disagreement, low-edge, and quote-failure stops
 - [x] Hash-linked decision receipts
 - [x] Restart-safe duplicate and ambiguous-order state

@@ -1,18 +1,5 @@
 [
   {
-    "marketId": "0x7fb6eb62585de2fde740bfe4b4bae0c279919021",
-    "outcomeIdx": 0,
-    "sourceName": "Wikimedia Pageviews API",
-    "sourceUrl": "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/Chess/daily/20260818/20260818",
-    "jsonPath": "items.0.views",
-    "comparator": "gt",
-    "threshold": 2250,
-    "eventAtPath": "items.0.timestamp",
-    "eventAtFormat": "wikimedia-hour",
-    "freshness": { "type": "retrieval" },
-    "maxFreshnessAgeMinutes": 1440
-  },
-  {
     "marketId": "0x360274d153c58566943cb21088dd95e45638bda3",
     "outcomeIdx": 0,
     "sourceName": "NOAA CO-OPS Water Levels",
@@ -35,18 +22,23 @@
     "marketId": "0xbf1ce7c9d751b92bfac4acefe0e87d82b1d30163",
     "outcomeIdx": 0,
     "sourceName": "MLS Stats API",
-    "sourceUrl": "https://stats-api.mlssoccer.com/matches/MLS-MAT-0009J5",
-    "jsonPath": "match_information.home_team_goals",
+    "sourceUrl": "https://stats-api.mlssoccer.com/matches/seasons/MLS-SEA-0001KA?match_date%5Bgte%5D=2026-08-19&match_date%5Blte%5D=2026-08-20&per_page=120&sort=planned_kickoff_time%3Aasc%2Chome_team_name%3Aasc",
+    "selection": {
+      "recordsPath": "schedule",
+      "keyPath": "match_id",
+      "equals": "MLS-MAT-0009J5"
+    },
+    "jsonPath": "home_team_goals",
     "comparator": "gt",
     "threshold": {
-      "jsonPath": "match_information.away_team_goals"
+      "jsonPath": "away_team_goals"
     },
-    "eventAtPath": "match_information.kickoff_time",
+    "eventAtPath": "planned_kickoff_time",
     "eventAtFormat": "iso",
     "freshness": { "type": "retrieval" },
     "conditions": [
       {
-        "jsonPath": "match_information.match_status",
+        "jsonPath": "match_status",
         "comparator": "eq",
         "threshold": "finalWhistle"
       }

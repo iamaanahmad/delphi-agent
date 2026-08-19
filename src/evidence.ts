@@ -55,6 +55,19 @@ function thresholdAt(payload: unknown, threshold: RuleThreshold): number | strin
   return typeof threshold === "object" ? scalarAt(payload, threshold.jsonPath) : threshold;
 }
 
+function selectedPayload(rule: ResolutionRule, payload: unknown): unknown {
+  if (!rule.selection) return payload;
+  const records = readPath(payload, rule.selection.recordsPath);
+  if (!Array.isArray(records)) throw new Error(`Missing records array at ${rule.selection.recordsPath}`);
+  const matches = records.filter((record) =>
+    compare(scalarAt(record, rule.selection!.keyPath), "eq", rule.selection!.equals),
+  );
+  if (matches.length !== 1) {
+    throw new Error(`Expected exactly one record matching ${rule.selection.keyPath}, received ${matches.length}`);
+  }
+  return matches[0];
+}
+
 function aggregate(rule: ResolutionRule, payload: unknown): { actual: number; eventTime: Date; count: number } {
   const config = rule.aggregation;
   if (!config) throw new Error("Missing aggregation configuration");
@@ -86,35 +99,36 @@ function aggregate(rule: ResolutionRule, payload: unknown): { actual: number; ev
 }
 
 export function extractEvidence(rule: ResolutionRule, payload: unknown, now = new Date()): EvidenceSignal {
+  const scopedPayload = selectedPayload(rule, payload);
   let actual: number | string;
   let eventTime: Date;
   let aggregationDetail = "";
   let publicationTime: string | undefined;
 
   if (rule.aggregation) {
-    const result = aggregate(rule, payload);
+    const result = aggregate(rule, scopedPayload);
     actual = result.actual;
     eventTime = result.eventTime;
     aggregationDetail = ` from ${result.count} observations`;
   } else {
     if (!rule.jsonPath) throw new Error("Scalar rule requires jsonPath");
-    actual = scalarAt(payload, rule.jsonPath);
+    actual = scalarAt(scopedPayload, rule.jsonPath);
     if (!rule.eventAtPath) throw new Error("Scalar rule requires eventAtPath");
-    eventTime = parseTimestamp(scalarAt(payload, rule.eventAtPath), rule.eventAtFormat);
+    eventTime = parseTimestamp(scalarAt(scopedPayload, rule.eventAtPath), rule.eventAtFormat);
   }
 
   let freshnessTime: Date;
   if (rule.freshness.type === "publication") {
-    freshnessTime = parseTimestamp(scalarAt(payload, rule.freshness.path), rule.freshness.format);
+    freshnessTime = parseTimestamp(scalarAt(scopedPayload, rule.freshness.path), rule.freshness.format);
     publicationTime = freshnessTime.toISOString();
   } else {
     freshnessTime = now;
   }
 
   const conditionsMet = (rule.conditions ?? []).every((condition) =>
-    compare(scalarAt(payload, condition.jsonPath), condition.comparator, condition.threshold),
+    compare(scalarAt(scopedPayload, condition.jsonPath), condition.comparator, condition.threshold),
   );
-  const threshold = thresholdAt(payload, rule.threshold);
+  const threshold = thresholdAt(scopedPayload, rule.threshold);
   const ageMinutes = (now.getTime() - freshnessTime.getTime()) / 60_000;
   const fresh = ageMinutes >= 0 && ageMinutes <= (rule.maxFreshnessAgeMinutes ?? 15);
   const outcomeTrue = compare(actual, rule.comparator, threshold);

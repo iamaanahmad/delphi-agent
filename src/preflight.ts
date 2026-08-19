@@ -80,6 +80,14 @@ function validateRules(rules: ResolutionRule[]): void {
     if (rule.aggregation !== undefined && !rule.aggregation.eventAtPath) {
       throw new Error(`${label} is missing an aggregate event timestamp path`);
     }
+    if (rule.selection !== undefined) {
+      if (!rule.selection.recordsPath || !rule.selection.keyPath) {
+        throw new Error(`${label} has an invalid record selection`);
+      }
+      if (typeof rule.selection.equals !== "number" && typeof rule.selection.equals !== "string") {
+        throw new Error(`${label} has an invalid record selection value`);
+      }
+    }
     if (!rule.freshness || !["publication", "retrieval"].includes(rule.freshness.type)) {
       throw new Error(`${label} has an invalid freshness source`);
     }
