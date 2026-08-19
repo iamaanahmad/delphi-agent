@@ -8,6 +8,7 @@ import type {
   ResolutionRule,
   RiskPolicy,
   WalletBalanceSnapshot,
+  SettlementQuote,
 } from "./types.js";
 
 const previousHashes = new Map<string, string>();
@@ -92,6 +93,22 @@ export interface ReconciliationLedgerRecord {
   realizedPnlTst: Availability<number>;
 }
 
+export interface SettlementActionLedgerRecord {
+  type: "settlement_action";
+  marketId: string;
+  walletAddress: string;
+  settlement: Availability<MarketSettlementSnapshot>;
+  action: "redeem" | "liquidate" | "skip";
+  outcomeIndices: number[];
+  quote: Availability<SettlementQuote>;
+  transaction: TransactionLedgerState;
+  wallet: {
+    before: Availability<WalletBalanceSnapshot>;
+    after: Availability<WalletBalanceSnapshot>;
+    changeTst: Availability<number>;
+  };
+}
+
 export type TelemetryEnvironment = "live" | "dry_run" | "replay" | "test";
 
 export const TELEMETRY_ENVIRONMENTS = ["live", "dry_run", "replay", "test"] as const satisfies readonly TelemetryEnvironment[];
@@ -147,7 +164,7 @@ export interface TelemetryLedgerRecord {
   data: TelemetryEventData;
 }
 
-export type LedgerRecord = DecisionLedgerRecord | FailureLedgerRecord | ReconciliationLedgerRecord | TelemetryLedgerRecord;
+export type LedgerRecord = DecisionLedgerRecord | FailureLedgerRecord | ReconciliationLedgerRecord | SettlementActionLedgerRecord | TelemetryLedgerRecord;
 
 export interface LedgerEnvelope {
   version: 2;

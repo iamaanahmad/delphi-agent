@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { DelphiClient } from "@gensyn-ai/gensyn-delphi-sdk";
 import type { MarketView, ResolutionRule } from "./types.js";
 import { loadResolutionRules } from "./watcher.js";
+import { assessRuleTiming } from "./rule-timing.js";
 
 export type PreflightStatus = "pass" | "fail" | "unavailable";
 
@@ -96,6 +97,9 @@ function validateRules(rules: ResolutionRule[]): void {
     }
     if (rule.maxFreshnessAgeMinutes !== undefined && (!Number.isFinite(rule.maxFreshnessAgeMinutes) || rule.maxFreshnessAgeMinutes <= 0)) {
       throw new Error(`${label} has an invalid freshness limit`);
+    }
+    if (rule.earliestDecisionAt !== undefined && !Number.isFinite(Date.parse(rule.earliestDecisionAt))) {
+      throw new Error(`${label} has an invalid earliest decision time`);
     }
   }
 }
@@ -276,19 +280,31 @@ export async function runPreflight(options: PreflightOptions = {}): Promise<Pref
     : { gate: "Execution switches", status: "fail", detail: "ALLOW_LIVE_TRADING and SETTLEMENT_EDGE_EXECUTE must both equal true.", required: true });
 
   if (!rules) {
+    results.push({ gate: "Rule timing", status: "fail", detail: "Timing cannot be checked until reviewed rules load.", required: true });
     results.push({ gate: "Quote availability", status: "fail", detail: "Quotes cannot be checked until reviewed rules load.", required: true });
   } else {
     try {
       const markets = await probe.listOpenMarkets();
       const uniqueRules = [...new Map(rules.map((rule) => [`${rule.marketId.toLowerCase()}:${rule.outcomeIdx}`, rule])).values()];
+      const timingFailures: string[] = [];
       for (const rule of uniqueRules) {
         const market = markets.find((item) => item.id.toLowerCase() === rule.marketId.toLowerCase());
         if (!market) throw new Error("a configured market is not open");
+        const timing = assessRuleTiming(rule, market);
+        if (!timing.feasible) timingFailures.push(`${market.question}: ${timing.reason}`);
+      }
+      results.push(timingFailures.length === 0
+        ? { gate: "Rule timing", status: "pass", detail: `${uniqueRules.length} rule(s) can produce decisive evidence before market close.`, required: true }
+        : { gate: "Rule timing", status: "fail", detail: timingFailures.join(" | "), required: true });
+      for (const rule of uniqueRules) {
         const quote = await probe.quoteBuy(rule.marketId, rule.outcomeIdx, 0.01);
         if (!Number.isFinite(quote.costTst) || quote.costTst <= 0) throw new Error("an invalid quote was returned");
       }
       results.push({ gate: "Quote availability", status: "pass", detail: `Read-only quotes succeeded for ${uniqueRules.length} configured outcome(s).`, required: true });
     } catch {
+      if (!results.some((result) => result.gate === "Rule timing")) {
+        results.push({ gate: "Rule timing", status: "fail", detail: "Timing could not be checked for every configured open market.", required: true });
+      }
       results.push({ gate: "Quote availability", status: "fail", detail: "A live quote could not be read for every configured open market.", required: true });
     }
   }

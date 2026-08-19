@@ -75,6 +75,21 @@ export interface PositionSnapshot {
   tokensRedeemedAtomic: string;
 }
 
+export interface PortfolioPositionSnapshot extends PositionSnapshot {
+  marketId: string;
+}
+
+export interface SettlementQuote {
+  sharesAtomic: string[];
+  tokensOutAtomic: string;
+}
+
+export interface SettlementExecution {
+  transactionHash: string;
+  sharesAtomic: string[];
+  tokensOutAtomic: string;
+}
+
 export interface ResolutionRule {
   marketId: string;
   outcomeIdx: number;
@@ -90,6 +105,8 @@ export interface ResolutionRule {
   aggregation?: RuleAggregation;
   conditions?: RuleCondition[];
   maxFreshnessAgeMinutes?: number;
+  /** Earliest time this rule can produce a decisive signal for its configured outcome. */
+  earliestDecisionAt?: string;
 }
 
 export interface RiskPolicy {
@@ -146,4 +163,14 @@ export interface ReconciliationGateway {
   getWalletSnapshot?(): Promise<WalletBalanceSnapshot>;
   getMarketSettlement?(marketId: string): Promise<MarketSettlementSnapshot>;
   listWalletPositions?(marketId: string, walletAddress: string): Promise<PositionSnapshot[]>;
+}
+
+export interface SettlementGateway extends ReconciliationGateway {
+  getWalletSnapshot(): Promise<WalletBalanceSnapshot>;
+  listPortfolioPositions(walletAddress: string): Promise<PortfolioPositionSnapshot[]>;
+  getMarketSettlement(marketId: string): Promise<MarketSettlementSnapshot>;
+  quoteRedemption(marketId: string, walletAddress: string): Promise<SettlementQuote>;
+  quoteLiquidation(marketId: string, outcomeIndices: number[], walletAddress: string): Promise<SettlementQuote>;
+  redeem(marketId: string): Promise<SettlementExecution>;
+  liquidate(marketId: string, outcomeIndices: number[]): Promise<SettlementExecution>;
 }
