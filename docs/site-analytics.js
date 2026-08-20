@@ -5,6 +5,7 @@
   const POSTHOG_HOST = "https://us.i.posthog.com";
   const FEEDBACK_MAX_LENGTH = 280;
   const FEEDBACK_SEEN_KEY = "settlement-edge-feedback-seen";
+  const TEST_EVENT_PREFIX = "settlement_edge_test_site_";
   const route = window.location.pathname.replace(/\/index\.html$/, "/") || "/";
   const isTest = new URLSearchParams(window.location.search).get("analytics_test") === "true";
 
@@ -91,11 +92,11 @@
       person_profiles: "never",
       disable_compression: isTest,
       autocapture: {
-        dom_event_allowlist: ["click"],
+        dom_event_allowlist: isTest ? [] : ["click"],
         element_allowlist: ["a", "button"],
       },
-      capture_pageview: true,
-      capture_pageleave: true,
+      capture_pageview: !isTest,
+      capture_pageleave: !isTest,
       disable_session_recording: false,
       rageclick: true,
       mask_all_text: true,
@@ -111,6 +112,11 @@
 
   function eventProperties(extra) {
     return Object.assign({ route, is_test: isTest }, extra || {});
+  }
+
+  function captureSiteEvent(posthog, eventName, extra) {
+    const isolatedName = isTest ? `${TEST_EVENT_PREFIX}${eventName}` : eventName;
+    posthog.capture(isolatedName, eventProperties(extra));
   }
 
   function createFeedbackPrompt(posthog) {
@@ -151,7 +157,7 @@
       event.preventDefault();
       const comment = textarea.value.trim().slice(0, FEEDBACK_MAX_LENGTH);
       if (!comment) return;
-      posthog.capture("feedback_submitted", eventProperties({ response: "answered", comment }));
+      captureSiteEvent(posthog, "feedback_submitted", { response: "answered", comment });
       window.localStorage.setItem(FEEDBACK_SEEN_KEY, "submitted");
       form.innerHTML = '<p class="feedback-thanks" role="status">Thank you. This goes straight into the next product read.</p>';
       window.setTimeout(function () {
@@ -193,7 +199,7 @@
         ? "settlement-edge-vs-gnosis"
         : null;
     if (guide) {
-      posthog.capture("guide_viewed", eventProperties({ guide }));
+      captureSiteEvent(posthog, "guide_viewed", { guide });
       let guideEngaged = false;
       window.addEventListener(
         "scroll",
@@ -202,7 +208,7 @@
           const available = document.documentElement.scrollHeight - window.innerHeight;
           if (available <= 0 || window.scrollY / available < 0.55) return;
           guideEngaged = true;
-          posthog.capture("guide_engaged", eventProperties({ guide, milestone: "55_percent" }));
+          captureSiteEvent(posthog, "guide_engaged", { guide, milestone: "55_percent" });
           showFeedback();
         },
         { passive: true },
@@ -213,7 +219,7 @@
     observeOnce(
       proof,
       function () {
-        posthog.capture("demo_engaged", eventProperties({ component: "decision_receipt" }));
+        captureSiteEvent(posthog, "demo_engaged", { component: "decision_receipt" });
         showFeedback();
       },
       { threshold: 0.55 },
@@ -223,14 +229,14 @@
     observeOnce(
       emptyState,
       function () {
-        posthog.capture("site_state_encountered", eventProperties({ state: "competition_activity_empty" }));
+        captureSiteEvent(posthog, "site_state_encountered", { state: "competition_activity_empty" });
       },
       { threshold: 0.65 },
     );
 
     for (const asset of document.querySelectorAll("[data-analytics-demo-asset]")) {
       asset.addEventListener("error", function () {
-        posthog.capture("site_state_encountered", eventProperties({ state: "demo_asset_error" }));
+        captureSiteEvent(posthog, "site_state_encountered", { state: "demo_asset_error" });
       });
     }
   }
