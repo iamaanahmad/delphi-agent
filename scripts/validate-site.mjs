@@ -79,11 +79,11 @@ for (const text of [
   'disable_session_recording: false',
   'maskAllInputs: true',
   'rageclick: true',
-  'posthog.capture("guide_viewed"',
-  'posthog.capture("guide_engaged"',
-  'posthog.capture("demo_engaged"',
-  'posthog.capture("site_state_encountered"',
-  'posthog.capture("feedback_submitted"',
+  'captureSiteEvent(posthog, "guide_viewed"',
+  'captureSiteEvent(posthog, "guide_engaged"',
+  'captureSiteEvent(posthog, "demo_engaged"',
+  'captureSiteEvent(posthog, "site_state_encountered"',
+  'captureSiteEvent(posthog, "feedback_submitted"',
   "posthog.startSessionRecording(true)",
   "What were you hoping to understand about Settlement Edge?",
 ]) {
@@ -94,6 +94,18 @@ for (const text of [
 
 if (!analytics.includes("FEEDBACK_MAX_LENGTH = 280") || !analytics.includes("slice(0, FEEDBACK_MAX_LENGTH)")) {
   throw new Error("docs/site-analytics.js must cap deliberate feedback at 280 characters");
+}
+
+for (const text of [
+  'TEST_EVENT_PREFIX = "settlement_edge_test_site_"',
+  "capture_pageview: !isTest",
+  "capture_pageleave: !isTest",
+  'dom_event_allowlist: isTest ? [] : ["click"]',
+  "isTest ? `${TEST_EVENT_PREFIX}${eventName}` : eventName",
+]) {
+  if (!analytics.includes(text)) {
+    throw new Error(`docs/site-analytics.js is missing marked-test isolation: ${text}`);
+  }
 }
 
 const terms = await readFile(resolve(root, "docs/terms.html"), "utf8");
