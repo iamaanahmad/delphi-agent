@@ -214,6 +214,12 @@ Run `npm run demo`. The fixture supplies a 61% market and a simulated Wikimedia 
 
 The build intentionally optimizes one contest-winning loop instead of presenting a broad trading dashboard. The next live milestone is one tiny, verified order from the registered wallet, but only after qualifying official evidence and every live risk gate pass.
 
+## Competition cutoffs
+
+The exact DoraHacks event timestamp closes wallet registration and competition trading on **August 23, 2026 at 23:59 UTC**. The generic event card calls this a submission deadline, but the competition requires only the registered trading wallet. No repository, video, or BUIDL submission is required.
+
+Final judging has no published UTC cutoff. It happens after all competition markets settle and Gensyn reviews final P&L and eligibility. See [competition-cutoffs.md](docs/competition-cutoffs.md) for the source reconciliation and the remaining unknowns.
+
 ## Technical challenges
 
 Regular Delphi uses dynamic parimutuel pricing, while this competition uses LMSR with a fixed 1 TST winning payout. The agent keeps that math isolated, quotes before every proposed trade, and avoids carrying regular Delphi spot-price assumptions into competition sizing.
