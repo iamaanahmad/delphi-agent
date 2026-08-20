@@ -102,6 +102,10 @@ for (const text of [
   "capture_pageleave: !isTest",
   'dom_event_allowlist: isTest ? [] : ["click"]',
   "isTest ? `${TEST_EVENT_PREFIX}${eventName}` : eventName",
+  'acquisition_channel: "ai_assistant"',
+  'captureSiteEvent(posthog, `site_referral_${attribution.acquisition_channel}`)',
+  "delete event.properties.$referrer",
+  "delete event.properties.$initial_referrer",
 ]) {
   if (!analytics.includes(text)) {
     throw new Error(`docs/site-analytics.js is missing marked-test isolation: ${text}`);

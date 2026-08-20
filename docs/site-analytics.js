@@ -6,8 +6,88 @@
   const FEEDBACK_MAX_LENGTH = 280;
   const FEEDBACK_SEEN_KEY = "settlement-edge-feedback-seen";
   const TEST_EVENT_PREFIX = "settlement_edge_test_site_";
+  const ATTRIBUTION_SESSION_KEY = "settlement-edge-referral-attribution";
+  const ATTRIBUTION_CAPTURED_KEY = "settlement-edge-referral-captured";
+  const AI_REFERRERS = [
+    { source: "chatgpt", hosts: ["chatgpt.com", "chat.openai.com"] },
+    { source: "claude", hosts: ["claude.ai"] },
+    { source: "perplexity", hosts: ["perplexity.ai"] },
+    { source: "gemini", hosts: ["gemini.google.com", "bard.google.com"] },
+    { source: "copilot", hosts: ["copilot.microsoft.com"] },
+    { source: "poe", hosts: ["poe.com"] },
+    { source: "you", hosts: ["you.com"] },
+    { source: "mistral", hosts: ["chat.mistral.ai"] },
+    { source: "meta_ai", hosts: ["meta.ai"] },
+  ];
+  const TEST_REFERRER_OVERRIDES = Object.fromEntries(AI_REFERRERS.map(({ source, hosts }) => [source, `https://${hosts[0]}/`]));
   const route = window.location.pathname.replace(/\/index\.html$/, "/") || "/";
-  const isTest = new URLSearchParams(window.location.search).get("analytics_test") === "true";
+  const searchParams = new URLSearchParams(window.location.search);
+  const isTest = searchParams.get("analytics_test") === "true";
+
+  function hostMatches(hostname, expected) {
+    return hostname === expected || hostname.endsWith(`.${expected}`);
+  }
+
+  function classifyReferrer(value) {
+    if (typeof value !== "string" || value.trim() === "") return { acquisition_channel: "direct", referral_source: "direct" };
+    try {
+      const hostname = new URL(value, window.location.origin).hostname.toLowerCase();
+      const aiReferrer = AI_REFERRERS.find(({ hosts }) => hosts.some((host) => hostMatches(hostname, host)));
+      if (aiReferrer) return { acquisition_channel: "ai_assistant", referral_source: aiReferrer.source };
+      if (
+        /(^|\.)google\.[a-z.]+$/.test(hostname) ||
+        /(^|\.)yahoo\.[a-z.]+$/.test(hostname) ||
+        /(^|\.)yandex\.[a-z.]+$/.test(hostname) ||
+        ["bing.com", "duckduckgo.com", "search.brave.com", "baidu.com", "ecosia.org", "kagi.com"].some((host) => hostMatches(hostname, host))
+      ) {
+        return { acquisition_channel: "search", referral_source: "search" };
+      }
+      return { acquisition_channel: "other", referral_source: "other" };
+    } catch {
+      return { acquisition_channel: "other", referral_source: "other" };
+    }
+  }
+
+  function readSessionValue(key) {
+    try {
+      return window.sessionStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  function writeSessionValue(key, value) {
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch {
+      /* Attribution still works for this page when session storage is unavailable. */
+    }
+  }
+
+  function referralAttribution() {
+    const sessionKey = isTest ? `${ATTRIBUTION_SESSION_KEY}-test` : ATTRIBUTION_SESSION_KEY;
+    const saved = readSessionValue(sessionKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const aiSources = AI_REFERRERS.map(({ source }) => source);
+        const isAllowed =
+          (parsed.acquisition_channel === "ai_assistant" && aiSources.includes(parsed.referral_source)) ||
+          (["search", "direct", "other"].includes(parsed.acquisition_channel) && parsed.referral_source === parsed.acquisition_channel);
+        if (isAllowed) return parsed;
+      } catch {
+        /* Replace invalid stored attribution with a fresh bounded value. */
+      }
+    }
+    const testSource = isTest ? searchParams.get("analytics_test_source") : null;
+    const testReferrer = testSource && Object.hasOwn(TEST_REFERRER_OVERRIDES, testSource) ? TEST_REFERRER_OVERRIDES[testSource] : null;
+    const referrer = testReferrer || document.referrer;
+    const attribution = classifyReferrer(referrer);
+    writeSessionValue(sessionKey, JSON.stringify(attribution));
+    return attribution;
+  }
+
+  const attribution = referralAttribution();
 
   function cleanUrl(value) {
     if (typeof value !== "string") return value;
@@ -21,16 +101,17 @@
 
   function sanitizeEvent(event) {
     if (!event || !event.properties) return event;
+    Object.assign(event.properties, attribution);
     for (const key of [
       "$current_url",
       "$initial_current_url",
       "$session_entry_url",
-      "$referrer",
-      "$initial_referrer",
       "$external_click_url",
     ]) {
       if (key in event.properties) event.properties[key] = cleanUrl(event.properties[key]);
     }
+    delete event.properties.$referrer;
+    delete event.properties.$initial_referrer;
     return event;
   }
 
@@ -111,7 +192,7 @@
   }
 
   function eventProperties(extra) {
-    return Object.assign({ route, is_test: isTest }, extra || {});
+    return Object.assign({ route, is_test: isTest }, attribution, extra || {});
   }
 
   function captureSiteEvent(posthog, eventName, extra) {
@@ -188,9 +269,14 @@
   }
 
   function initializeSiteAnalytics(posthog) {
-    posthog.register_for_session({ is_test: isTest });
+    posthog.register_for_session(Object.assign({ is_test: isTest }, attribution));
     posthog.startSessionRecording(true);
     document.documentElement.dataset.analyticsReady = "true";
+    const capturedKey = isTest ? `${ATTRIBUTION_CAPTURED_KEY}-test` : ATTRIBUTION_CAPTURED_KEY;
+    if (!readSessionValue(capturedKey)) {
+      captureSiteEvent(posthog, `site_referral_${attribution.acquisition_channel}`);
+      writeSessionValue(capturedKey, "true");
+    }
     const showFeedback = createFeedbackPrompt(posthog);
 
     const guide = route.endsWith("/prediction-market-trading-agent-vs-forecasting-agent.html")

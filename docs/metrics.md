@@ -43,3 +43,9 @@ npm run metrics -- --ledger artifacts/decision-receipts.jsonl
 The default sync includes only `environment=live`. Live event names use `settlement_edge_*`; dry runs, replays, and tests use `settlement_edge_dry_run_*`, `settlement_edge_replay_*`, and `settlement_edge_test_*`. Non-live events therefore cannot enter live competition totals. The project mirror exposes their hourly counts under `posthog.events.count`, with the event name in the `event` dimension.
 
 The remote payload excludes wallet addresses, balances, transaction hashes, source URLs, credentials, and free-form failure text. It contains only bounded lifecycle state needed to count runs and stages and to read the observed `realizedPnlTst` property.
+
+## Public-site referral attribution
+
+The public site classifies the first referrer in a browser session as `ai_assistant`, `search`, `direct`, or `other`. Known assistant hosts add one bounded source such as `chatgpt`, `claude`, `perplexity`, `gemini`, or `copilot`; the raw referrer URL and its query string are removed before capture.
+
+One `site_referral_<channel>` event is emitted per browser tab session, so the existing project mirror can query AI referrals as `posthog.events.count` with `{"event":"site_referral_ai_assistant"}`. Marked verification uses `settlement_edge_test_site_referral_<channel>` and remains outside live visitor totals. Do not compare AI-to-search conversion until both attributable visit cohorts and a real conversion event exist.
