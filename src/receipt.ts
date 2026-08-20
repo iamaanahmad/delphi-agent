@@ -13,6 +13,7 @@ import type {
 
 const previousHashes = new Map<string, string>();
 export const DEFAULT_LEDGER_PATH = "artifacts/decision-receipts.jsonl";
+export const DEFAULT_REPLAY_LEDGER_PATH = "artifacts/replay-receipts.jsonl";
 export const serializeLedgerValue = (value: unknown) => JSON.stringify(value, (_key, item) => typeof item === "bigint" ? item.toString() : item);
 
 export type Availability<T> =

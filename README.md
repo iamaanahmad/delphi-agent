@@ -8,7 +8,7 @@ Settlement Edge is an autonomous trading agent for the [Gensyn Delphi Agent Aren
 
 ## Observed status
 
-**Observed on August 20, 2026:** 0 live orders, 0 TST realized competition P&L, 1,000 TST available in the registered wallet, and 56 passing tests. No settlement or redemption has been observed. The 1.4292 TST expected P&L shown in the deterministic replay is simulated supporting evidence, not competition performance.
+**Observed on August 20, 2026:** 0 live orders, 0 TST realized competition P&L, 1,000 TST available in the registered wallet, and 61 passing tests. No settlement or redemption has been observed. The 1.4292 TST expected P&L shown in the deterministic replay is simulated supporting evidence, not competition performance.
 
 ## Tagline
 
@@ -111,7 +111,7 @@ npm run check
 npm run demo
 ```
 
-The deterministic demo needs no credentials and prints the complete decision trace. **Its 2.5200 TST cost and 1.4292 TST expected P&L are simulated. No order is submitted, and neither number is realized competition profit.**
+The deterministic demo needs no credentials and prints the complete decision trace. **Its 2.5200 TST cost and 1.4292 TST expected P&L are simulated. No order is submitted, and neither number is realized competition profit.** Replay receipts use `artifacts/replay-receipts.jsonl` by default, keeping fixtures outside the live decision ledger.
 
 ```text
 SETTLEMENT EDGE DECISION RECEIPT

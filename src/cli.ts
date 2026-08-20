@@ -7,7 +7,7 @@ import { fetchEvidence } from "./evidence.js";
 import { DelphiGateway, ReplayGateway } from "./gateway.js";
 import { reconcileMarket } from "./reconciliation.js";
 import { syncLedgerTelemetry } from "./metrics.js";
-import { DEFAULT_LEDGER_PATH, TELEMETRY_ENVIRONMENTS } from "./receipt.js";
+import { DEFAULT_LEDGER_PATH, DEFAULT_REPLAY_LEDGER_PATH, TELEMETRY_ENVIRONMENTS } from "./receipt.js";
 import { settlePortfolio } from "./settlement.js";
 import { assessRuleTiming } from "./rule-timing.js";
 import { appendTelemetry, type TelemetryContext } from "./telemetry.js";
@@ -52,7 +52,7 @@ async function replay(file: string) {
     publicationTime: item.publicationTime === "NOW" ? new Date().toISOString() : item.publicationTime,
   }));
   const gateway = new ReplayGateway([fixture.market]);
-  const receiptPath = process.env.SETTLEMENT_EDGE_RECEIPT_PATH ?? DEFAULT_LEDGER_PATH;
+  const receiptPath = process.env.SETTLEMENT_EDGE_REPLAY_RECEIPT_PATH ?? DEFAULT_REPLAY_LEDGER_PATH;
   const telemetry: TelemetryContext = { runId: randomUUID(), environment: "replay" };
   await appendTelemetry({ ...telemetry, event: "run_started", data: {} }, receiptPath);
   printDecision(await evaluateMarket(gateway, fixture.market, fixture.outcomeIdx, fixture.evidence, loadRiskPolicy(), false, {

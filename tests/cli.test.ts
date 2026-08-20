@@ -48,14 +48,19 @@ test("one-shot evaluation reports the same credential gate", async () => {
 });
 
 test("deterministic replay labels simulated cost and P&L", async () => {
-  const result = await run(process.execPath, ["--import", "tsx", "src/cli.ts", "replay", "fixtures/wikipedia-threshold.json"], {
-    cwd: process.cwd(),
-    env: process.env,
-  });
-  assert.match(result.stdout, /SIMULATED REPLAY \(no live order or realized P&L\)/);
-  assert.match(result.stdout, /4 shares for 2\.5200 TST/);
-  assert.match(result.stdout, /Expected P&L:1\.4292 TST \(not realized\)/);
-  assert.match(result.stdout, /dry-run only/);
+  const directory = await mkdtemp(join(tmpdir(), "settlement-edge-replay-"));
+  try {
+    const result = await run(process.execPath, ["--import", "tsx", "src/cli.ts", "replay", "fixtures/wikipedia-threshold.json"], {
+      cwd: process.cwd(),
+      env: { ...process.env, SETTLEMENT_EDGE_REPLAY_RECEIPT_PATH: join(directory, "receipts.jsonl") },
+    });
+    assert.match(result.stdout, /SIMULATED REPLAY \(no live order or realized P&L\)/);
+    assert.match(result.stdout, /4 shares for 2\.5200 TST/);
+    assert.match(result.stdout, /Expected P&L:1\.4292 TST \(not realized\)/);
+    assert.match(result.stdout, /dry-run only/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("retired market replays preserve safe receipts without an order", async () => {
@@ -65,7 +70,7 @@ test("retired market replays preserve safe receipts without an order", async () 
     ...process.env,
     ALLOW_LIVE_TRADING: "false",
     SETTLEMENT_EDGE_EXECUTE: "false",
-    SETTLEMENT_EDGE_RECEIPT_PATH: receiptPath,
+    SETTLEMENT_EDGE_REPLAY_RECEIPT_PATH: receiptPath,
   };
   try {
     for (const fixture of ["fixtures/active-market-skc.json", "fixtures/active-market-battery.json"]) {

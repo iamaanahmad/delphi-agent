@@ -160,7 +160,7 @@ export async function recordOpportunityFailure(
   telemetry?: TelemetryContext,
 ) {
   const first = rules[0];
-  if (!first) return;
+  if (!first || !receiptPath) return;
   const marketProbability = market?.probabilities[first.outcomeIdx];
   const sourceRecordHash = await appendLedgerRecord({
     type: "failure",
