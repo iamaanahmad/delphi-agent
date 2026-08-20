@@ -3,5 +3,6 @@ dist/
 .env
 coverage/
 artifacts/*.jsonl
+artifacts/*.log
+artifacts/*watcher-state*.json
 !artifacts/.gitkeep
-

@@ -10,7 +10,7 @@ for (const heading of headings) {
   if (!readme.includes(heading)) throw new Error(`README is missing ${heading}`);
 }
 
-const observedStatus = "0 live orders, 0 TST realized competition P&L, 1,000 TST available in the registered wallet, and 56 passing tests";
+const observedStatus = "0 live orders, 0 TST realized competition P&L, 1,000 TST available in the registered wallet, and 61 passing tests";
 for (const [name, content] of [["README", readme], ["demo script", demoScript]]) {
   if (!content.includes(observedStatus)) throw new Error(`${name} is missing the current observed competition status`);
   if (!content.includes("1.4292 TST") || !content.includes("simulated")) {
