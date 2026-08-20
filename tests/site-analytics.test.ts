@@ -68,6 +68,7 @@ test("marked site analytics use an isolated event namespace and disable automati
     "demo_engaged",
     { component: "decision_receipt" },
   );
+  harness.captureSiteEvent({ capture: (name, properties) => captured.push({ name, properties }) }, "referral_ai_assistant");
   assert.deepEqual(normalize(captured), [
     {
       name: "settlement_edge_test_site_demo_engaged",
@@ -77,6 +78,15 @@ test("marked site analytics use an isolated event namespace and disable automati
         acquisition_channel: "ai_assistant",
         referral_source: "chatgpt",
         component: "decision_receipt",
+      },
+    },
+    {
+      name: "settlement_edge_test_site_referral_ai_assistant",
+      properties: {
+        route: "/delphi-agent/",
+        is_test: true,
+        acquisition_channel: "ai_assistant",
+        referral_source: "chatgpt",
       },
     },
   ]);

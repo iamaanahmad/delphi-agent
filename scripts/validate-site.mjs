@@ -103,7 +103,7 @@ for (const text of [
   'dom_event_allowlist: isTest ? [] : ["click"]',
   "isTest ? `${TEST_EVENT_PREFIX}${eventName}` : eventName",
   'acquisition_channel: "ai_assistant"',
-  'captureSiteEvent(posthog, `site_referral_${attribution.acquisition_channel}`)',
+  'captureSiteEvent(posthog, `referral_${attribution.acquisition_channel}`)',
   "delete event.properties.$referrer",
   "delete event.properties.$initial_referrer",
 ]) {
