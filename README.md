@@ -8,7 +8,7 @@ Settlement Edge is an autonomous trading agent for the [Gensyn Delphi Agent Aren
 
 ## Observed status
 
-The credential-free decision journey is proven locally. **No live order, settlement, redemption, or realized competition P&L has been observed for Settlement Edge yet.** The replay below is simulation, not leaderboard performance.
+**Observed on August 20, 2026:** 0 live orders, 0 TST realized competition P&L, 1,000 TST available in the registered wallet, and 56 passing tests. No settlement or redemption has been observed. The 1.4292 TST expected P&L shown in the deterministic replay is simulated supporting evidence, not competition performance.
 
 ## Tagline
 
@@ -30,7 +30,7 @@ The agent is built around settlement evidence, not free-form prediction. Its str
 
 ## Sponsor technology
 
-The official `@gensyn-ai/gensyn-delphi-sdk` is the execution backbone. The wired gateway discovers competition markets, reads implied probabilities, obtains LMSR buy quotes, manages gateway approval, and can submit TST trades on `competition-testnet`. Market access and order submission remain credential-gated and have not been observed live for Settlement Edge.
+The official `@gensyn-ai/gensyn-delphi-sdk` is the execution backbone. The wired gateway discovers competition markets, reads implied probabilities, obtains LMSR buy quotes, manages gateway approval, and can submit TST trades on `competition-testnet`. Competition access and read-only quotes have been observed from the configured registered wallet; no live order has been submitted.
 
 ## Architecture
 
@@ -208,12 +208,11 @@ Run `npm run demo`. The fixture supplies a 61% market and a simulated Wikimedia 
 - [x] Read-only settlement, redemption, wallet, and realized-P&L reconciliation in code and fixtures
 - [x] Dry-run-first redemption and failed-market liquidation with hash-linked receipts
 - [x] Type checking, unit tests, and GitHub Actions
-- [ ] Register the trading wallet on DoraHacks
-- [ ] Add the testnet Delphi API key and signer only to local `.env`
+- [x] Registered signer, testnet Delphi API access, and 1,000 TST confirmed by read-only preflight
 - [ ] Confirm any numeric minimum activity requirement the organizer publishes
 - [ ] Run one tiny order only after the live preflight passes
 
-The build intentionally optimizes one contest-winning loop instead of presenting a broad trading dashboard. The next live milestone is a registered wallet completing one tiny, verified order and appearing on the [competition leaderboard](https://competition.delphi.fyi/).
+The build intentionally optimizes one contest-winning loop instead of presenting a broad trading dashboard. The next live milestone is one tiny, verified order from the registered wallet, but only after qualifying official evidence and every live risk gate pass.
 
 ## Technical challenges
 
@@ -223,10 +222,10 @@ Shallow liquidity can make even modest orders move the curve or revert. Rather t
 
 ## Future roadmap
 
-1. Fund the exact registered signer with competition TST and verify leaderboard inclusion with a tiny eligible trade.
-2. Add at least one reviewed rule whose decisive source fact can arrive before its market closes.
+1. Watch the official Gemini model-card table through the eligible market cutoff.
+2. Reconcile the guarded watch outcome, including a no-trade result if no qualifying row appears.
 3. Exercise guarded redemption after the first eligible live position settles.
-4. Confirm and encode the organizer's unpublished trade and market activity thresholds.
+4. Confirm and encode any numeric trade or market activity thresholds the organizer publishes.
 
 ## Impact
 

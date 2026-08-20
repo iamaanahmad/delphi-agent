@@ -1,8 +1,10 @@
 # 90-second demo
 
+> **Observed on August 20, 2026:** 0 live orders, 0 TST realized competition P&L, 1,000 TST available in the registered wallet, and 56 passing tests. The 1.4292 TST expected replay profit is simulated supporting evidence, not competition performance.
+
 ## 0:00 to 0:15: the contest problem
 
-Open the competition leaderboard and say: “Settlement Edge has placed 0 live orders and realized 0 competition TST. The replay you are about to see is simulated, not live performance. This contest is judged by final P&L. The opportunity is not more trades. It is recognizing an objective result before the market fully prices it.”
+Open the competition leaderboard and say: “Settlement Edge has placed 0 live orders and realized 0 competition TST. Its registered wallet has 1,000 TST available, but it will not trade without qualifying evidence and a safe quote. The replay you are about to see is simulated, not live performance.”
 
 ## 0:15 to 0:35: the evidence
 
@@ -22,7 +24,7 @@ Then change the evidence timestamp to 2020 and rerun. The agent should skip with
 
 ## 1:05 to 1:20: the safety model
 
-Show `.env.example`. Explain that the live SDK gateway is present, but an order needs two explicit execution switches, a registered competition wallet, and secrets that never enter git.
+Show `.env.example`. Explain that the live SDK gateway, API access, registered signer, and 1,000 TST balance have passed read-only preflight. An order still needs two explicit execution switches, qualifying evidence, a safe quote, and secrets that never enter git.
 
 ## 1:20 to 1:30: the memorable close
 

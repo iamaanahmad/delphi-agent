@@ -40,8 +40,11 @@ const index = await readFile(resolve(root, "docs/index.html"), "utf8");
 const requiredIndexText = [
   "0 live orders",
   "0 TST",
+  "1,000 TST available in the registered wallet",
+  "56 passing tests",
   "+1.4292 TST",
   "2.5200 TST simulated cost",
+  "supporting evidence, not competition performance",
   "https://github.com/iamaanahmad/delphi-agent",
   "https://dorahacks.io/hackathon/delphi-agent-competition/detail",
   "terms.html",
