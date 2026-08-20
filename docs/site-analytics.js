@@ -274,7 +274,7 @@
     document.documentElement.dataset.analyticsReady = "true";
     const capturedKey = isTest ? `${ATTRIBUTION_CAPTURED_KEY}-test` : ATTRIBUTION_CAPTURED_KEY;
     if (!readSessionValue(capturedKey)) {
-      captureSiteEvent(posthog, `site_referral_${attribution.acquisition_channel}`);
+      captureSiteEvent(posthog, `referral_${attribution.acquisition_channel}`);
       writeSessionValue(capturedKey, "true");
     }
     const showFeedback = createFeedbackPrompt(posthog);
