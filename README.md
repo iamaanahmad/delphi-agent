@@ -172,6 +172,18 @@ npm run supervise -- config/resolution-rules.json --cutoff 2026-08-23T23:59:00Z
 
 The supervisor writes and monitors a heartbeat, restarts a failed or unresponsive watcher, and stops at the configured cutoff or the first submitted or ambiguous configured-market order. It also holds a single-writer lease for the active ledger. A second supervisor, reconciliation command, or other process cannot append to that ledger while the lease is active. An abandoned lease is recovered only after its heartbeat is stale and its owner PID is no longer alive. Start the supervisor itself with the host's durable service manager; the repository can recover its watcher child, but no process can restart itself after the host kills the supervisor.
 
+In a workspace without a running systemd or cron manager, build once and launch the repository-owned outer service as a detached session. Keep both execution switches explicitly disabled for verification, and do not start it until the rule file contains only reviewed markets that pass preflight:
+
+```bash
+npm run build
+ALLOW_LIVE_TRADING=false SETTLEMENT_EDGE_EXECUTE=false \
+  setsid nohup node dist/src/service-cli.js config/resolution-rules.json \
+  --cutoff 2026-08-23T23:59:00Z \
+  > artifacts/supervisor-service.log 2>&1 < /dev/null &
+```
+
+The outer service restarts only an abnormally exited supervisor. Before recovery it stops the previous supervisor's orphaned watcher process group, then reuses the same stale-dead-only writer-lease path. A clean supervisor exit after a configured-market order, an operator signal, or the cutoff is not restarted. The outer service has its own cutoff timer and never starts a replacement at or after August 23, 2026 at 23:59 UTC. Restart the service whenever the configured market IDs change so the supervisor's order guard matches the reviewed rule set.
+
 Watcher state is stored atomically in `artifacts/watcher-state.json`. Successful opportunities retain their transaction hash, while an order whose response was lost is persisted as ambiguous and blocked after restart.
 
 After a trade settles, append a read-only wallet and market reconciliation:
@@ -210,6 +222,7 @@ Run `npm run demo`. The fixture supplies a 61% market and a simulated Wikimedia 
 - [x] Deterministic credential-free replay
 - [x] Continuous 60-second watcher with retry, shutdown, and duplicate-order protection
 - [x] Heartbeat-monitored supervisor with child recovery, cutoff stop, and active-ledger single-writer lease
+- [x] Detached outer service with supervisor recovery, orphan-watcher cleanup, and an independent cutoff
 - [x] One timing-eligible live mapping plus retired post-close mappings with offline boundary fixtures
 - [x] Stale-data, disagreement, low-edge, and quote-failure stops
 - [x] Hash-linked decision receipts

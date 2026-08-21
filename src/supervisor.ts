@@ -95,7 +95,11 @@ export async function runWatcherSupervisor(options: WatcherSupervisorOptions): P
     if (child && child.exitCode === null && child.signalCode === null) {
       const exited = waitForChildExit(child);
       terminateChild(child, "SIGTERM");
-      const graceful = await Promise.race([exited.then(() => true), delay(stopGraceMs).then(() => false)]);
+      let timeout: NodeJS.Timeout | undefined;
+      const graceful = await Promise.race([
+        exited.then(() => true),
+        new Promise<false>((resolve) => { timeout = setTimeout(() => resolve(false), stopGraceMs); }),
+      ]).finally(() => { if (timeout) clearTimeout(timeout); });
       if (!graceful) {
         terminateChild(child, "SIGKILL");
         await exited;
@@ -161,13 +165,14 @@ export async function runWatcherSupervisor(options: WatcherSupervisorOptions): P
   };
 
   const inspectHeartbeat = async () => {
-    if (!child?.pid) return;
+    const current = child;
+    if (!current?.pid) return;
     try {
       const heartbeat = JSON.parse(await readFile(options.heartbeatPath, "utf8")) as Partial<WatcherHeartbeat>;
       if (
         heartbeat.version === 1
         && heartbeat.token === lease.token
-        && heartbeat.pid === child.pid
+        && heartbeat.pid === current.pid
         && heartbeat.status === "running"
         && typeof heartbeat.timestamp === "string"
       ) {
@@ -177,9 +182,10 @@ export async function runWatcherSupervisor(options: WatcherSupervisorOptions): P
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
+    if (stopping || child !== current) return;
     if (Date.now() - lastHeartbeatAt > heartbeatTimeoutMs) {
-      emit({ type: "child-heartbeat-stale", pid: child.pid, reason: `no valid heartbeat for ${Date.now() - lastHeartbeatAt}ms` });
-      terminateChild(child, "SIGKILL");
+      emit({ type: "child-heartbeat-stale", pid: current.pid, reason: `no valid heartbeat for ${Date.now() - lastHeartbeatAt}ms` });
+      terminateChild(current, "SIGKILL");
       lastHeartbeatAt = Date.now();
     }
   };
