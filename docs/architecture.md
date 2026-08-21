@@ -12,8 +12,9 @@ Settlement Edge must fail closed. A missing source, stale timestamp, malformed v
 4. `engine.ts` filters stale evidence, rejects disagreement, sizes a trade, and optionally executes it.
 5. `receipt.ts` appends backward-compatible decision, failure, transaction, and reconciliation records with the previous record hash.
 6. `watcher.ts` atomically persists processed and ambiguous opportunities so a restart cannot silently replay the same order.
-7. `reconciliation.ts` joins read-only SDK wallet, settlement, and position state to observed trade balances. It reports unavailable fields explicitly and computes realized P&L only after redemption is observed.
-8. `settlement.ts` quotes every eligible portfolio exit and routes settled markets to redemption or expired and failed markets to liquidation. Transactions remain behind both live switches.
+7. `supervisor.ts` owns a heartbeat-monitored watcher child, restarts it before cutoff, and holds the active ledger's single-writer lease for the full run.
+8. `reconciliation.ts` joins read-only SDK wallet, settlement, and position state to observed trade balances. It reports unavailable fields explicitly and computes realized P&L only after redemption is observed.
+9. `settlement.ts` quotes every eligible portfolio exit and routes settled markets to redemption or expired and failed markets to liquidation. Transactions remain behind both live switches.
 
 The live `run` command groups resolution rules by market outcome, fetches all declared sources, and sends the combined evidence through this same pipeline. Rules are reviewed configuration rather than model-generated guesses.
 
@@ -41,10 +42,13 @@ Version 2 also carries schema-versioned lifecycle telemetry for runs, evidence, 
 
 Source and schema failures are terminal records, so a failed fetch does not disappear before audit. Transaction responses that fail after a buy attempt are recorded as ambiguous and persisted in watcher state. Reconciliation uses observed wallet deltas for trade cost basis rather than treating the pre-trade quote as realized spend.
 
+The supervised live path creates an atomic writer-lock directory beside the selected ledger. Its owner metadata includes a private token, PID, acquisition time, and heartbeat. Only the watcher child carrying that token can append while the lease exists, which prevents a second supervisor or reconciliation process from forking the hash chain. Recovery fails closed unless both conditions hold: the lock heartbeat exceeded its configured stale timeout and the recorded PID is no longer alive.
+
 ## Known limits
 
 - Each real market needs a reviewed resolution rule matching its exact settlement wording. Automatically guessing JSON paths or thresholds is deliberately out of scope.
 - A reviewed source mapping is not necessarily tradable. Every live rule must declare or derive its earliest decisive evidence time, and that time must be strictly before the SDK market close.
 - The agent can redeem or liquidate eligible positions through a guarded portfolio sweep. It does not rebalance or sell open positions.
+- The repository supervisor recovers its watcher child. The supervisor itself must run under a host service manager if it needs recovery from host or container termination.
 - The competition page says entrants must meet published minimum activity requirements, but no numeric trade or distinct-market threshold is visible. Confirm any numeric requirement the organizer publishes.
 - Source adapters default to JSON. The only HTML adapter accepts exact Gemini Pro rows from Google DeepMind's model-card table; generic HTML, document-novelty, CSV, and signed-document extraction remain out of scope.
