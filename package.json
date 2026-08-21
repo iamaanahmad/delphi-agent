@@ -18,6 +18,7 @@
     "metrics": "tsx src/cli.ts metrics",
     "agent": "tsx src/cli.ts run",
     "watch": "tsx src/cli.ts watch",
+    "supervise": "tsx src/supervisor-cli.ts",
     "test": "tsx --test tests/**/*.test.ts",
     "validate:submission": "node scripts/validate-submission.mjs",
     "validate:site": "node scripts/validate-site.mjs"

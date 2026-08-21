@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { assertLedgerWriterAuthorized } from "./ledger-lock.js";
 import type {
   Decision,
   MarketSettlementSnapshot,
@@ -191,6 +192,7 @@ async function getPreviousHash(path: string): Promise<string> {
 }
 
 export async function appendLedgerRecord(record: LedgerRecord, path = DEFAULT_LEDGER_PATH, timestamp = new Date()) {
+  await assertLedgerWriterAuthorized(path);
   const previousHash = await getPreviousHash(path);
   const body = {
     version: 2 as const,
@@ -200,6 +202,7 @@ export async function appendLedgerRecord(record: LedgerRecord, path = DEFAULT_LE
   };
   const hash = createHash("sha256").update(serializeLedgerValue(body)).digest("hex");
   await mkdir(dirname(path), { recursive: true });
+  await assertLedgerWriterAuthorized(path);
   await appendFile(path, `${serializeLedgerValue({ ...body, hash })}\n`, "utf8");
   previousHashes.set(path, hash);
   return hash;
@@ -217,10 +220,12 @@ export async function readLedger(path = DEFAULT_LEDGER_PATH): Promise<Array<Ledg
 
 // Compatibility entry point for callers that still produce the original v1 decision receipt.
 export async function appendReceipt(decision: Decision, path = DEFAULT_LEDGER_PATH) {
+  await assertLedgerWriterAuthorized(path);
   const previousHash = await getPreviousHash(path);
   const body = { version: 1, timestamp: new Date().toISOString(), previousHash, decision };
   const hash = createHash("sha256").update(serializeLedgerValue(body)).digest("hex");
   await mkdir(dirname(path), { recursive: true });
+  await assertLedgerWriterAuthorized(path);
   await appendFile(path, `${serializeLedgerValue({ ...body, hash })}\n`, "utf8");
   previousHashes.set(path, hash);
   return hash;

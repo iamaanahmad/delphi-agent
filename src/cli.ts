@@ -1,6 +1,8 @@
 import "dotenv/config";
 import { createHash, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import { startWatcherHeartbeat } from "./heartbeat.js";
+import { LEDGER_WRITER_TOKEN_ENV } from "./ledger-lock.js";
 import { loadRiskPolicy, liveTradingEnabled } from "./config.js";
 import { evaluateMarket } from "./engine.js";
 import { fetchEvidence } from "./evidence.js";
@@ -199,6 +201,20 @@ async function watch(ruleFile: string, args: string[]) {
   const retryMaxMs = positiveOption("retry maximum", process.env.SETTLEMENT_EDGE_RETRY_MAX_MS, 30_000);
   const execute = liveTradingEnabled();
   const controller = new AbortController();
+  const heartbeatPath = process.env.SETTLEMENT_EDGE_WATCHER_HEARTBEAT_PATH;
+  const heartbeatToken = process.env[LEDGER_WRITER_TOKEN_ENV];
+  if (heartbeatPath && !heartbeatToken) throw new Error("watcher heartbeat requires a supervisor writer token");
+  const heartbeat = heartbeatPath && heartbeatToken
+    ? startWatcherHeartbeat(
+      heartbeatPath,
+      heartbeatToken,
+      positiveOption("heartbeat interval", process.env.SETTLEMENT_EDGE_WATCHER_HEARTBEAT_INTERVAL_MS, 5_000),
+      (error) => {
+        console.error(`Watcher heartbeat failed closed: ${error.message}`);
+        controller.abort();
+      },
+    )
+    : undefined;
   const stop = () => controller.abort();
   process.once("SIGINT", stop);
   process.once("SIGTERM", stop);
@@ -221,6 +237,7 @@ async function watch(ruleFile: string, args: string[]) {
       onStatus: printWatcherStatus,
     });
   } finally {
+    await heartbeat?.stop("watcher stopped");
     process.removeListener("SIGINT", stop);
     process.removeListener("SIGTERM", stop);
   }

@@ -1,6 +1,6 @@
 # 90-second demo
 
-> **Observed on August 20, 2026:** 0 live orders, 0 TST realized competition P&L, 1,000 TST available in the registered wallet, and 61 passing tests. The 1.4292 TST expected replay profit is simulated supporting evidence, not competition performance.
+> **Observed on August 21, 2026:** 0 live orders, 0 TST realized competition P&L, 1,000 TST available in the registered wallet, and 70 passing tests. The 1.4292 TST expected replay profit is simulated supporting evidence, not competition performance.
 
 ## 0:00 to 0:15: the contest problem
 

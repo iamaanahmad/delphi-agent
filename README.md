@@ -8,7 +8,7 @@ Settlement Edge is an autonomous trading agent for the [Gensyn Delphi Agent Aren
 
 ## Observed status
 
-**Observed on August 20, 2026:** 0 live orders, 0 TST realized competition P&L, 1,000 TST available in the registered wallet, and 61 passing tests. No settlement or redemption has been observed. The 1.4292 TST expected P&L shown in the deterministic replay is simulated supporting evidence, not competition performance.
+**Observed on August 21, 2026:** 0 live orders, 0 TST realized competition P&L, 1,000 TST available in the registered wallet, and 70 passing tests. No settlement or redemption has been observed. The 1.4292 TST expected P&L shown in the deterministic replay is simulated supporting evidence, not competition performance.
 
 ## Tagline
 
@@ -164,6 +164,14 @@ npm run watch -- config/resolution-rules.json --interval-ms 5000
 
 `SETTLEMENT_EDGE_POLL_INTERVAL_MS` can also set the polling interval. Transient failures use exponential retry backoff, `SIGINT` and `SIGTERM` stop cleanly, and unchanged evidence plus market state cannot produce the same order twice. Dry-run remains the default; live orders still require both `ALLOW_LIVE_TRADING=true` and `SETTLEMENT_EDGE_EXECUTE=true`.
 
+For any unattended or live watch, use the cutoff-aware supervisor instead of launching `watch` directly:
+
+```bash
+npm run supervise -- config/resolution-rules.json --cutoff 2026-08-23T23:59:00Z
+```
+
+The supervisor writes and monitors a heartbeat, restarts a failed or unresponsive watcher, and stops at the configured cutoff or the first submitted or ambiguous configured-market order. It also holds a single-writer lease for the active ledger. A second supervisor, reconciliation command, or other process cannot append to that ledger while the lease is active. An abandoned lease is recovered only after its heartbeat is stale and its owner PID is no longer alive. Start the supervisor itself with the host's durable service manager; the repository can recover its watcher child, but no process can restart itself after the host kills the supervisor.
+
 Watcher state is stored atomically in `artifacts/watcher-state.json`. Successful opportunities retain their transaction hash, while an order whose response was lost is persisted as ambiguous and blocked after restart.
 
 After a trade settles, append a read-only wallet and market reconciliation:
@@ -201,6 +209,7 @@ Run `npm run demo`. The fixture supplies a 61% market and a simulated Wikimedia 
 - [x] Explicit two-switch live-order gate
 - [x] Deterministic credential-free replay
 - [x] Continuous 60-second watcher with retry, shutdown, and duplicate-order protection
+- [x] Heartbeat-monitored supervisor with child recovery, cutoff stop, and active-ledger single-writer lease
 - [x] One timing-eligible live mapping plus retired post-close mappings with offline boundary fixtures
 - [x] Stale-data, disagreement, low-edge, and quote-failure stops
 - [x] Hash-linked decision receipts

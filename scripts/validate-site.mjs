@@ -41,7 +41,7 @@ const requiredIndexText = [
   "0 live orders",
   "0 TST",
   "1,000 TST available in the registered wallet",
-  "61 passing tests",
+  "70 passing tests",
   "+1.4292 TST",
   "2.5200 TST simulated cost",
   "supporting evidence, not competition performance",
