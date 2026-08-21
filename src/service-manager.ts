@@ -147,7 +147,10 @@ export async function runSupervisorService(
   // Begin graceful shutdown one full grace period before the hard deadline so
   // the supervisor, watcher, and lease are all gone no later than the cutoff.
   const shutdownAt = new Date(options.cutoff.getTime() - stopGraceMs);
-  const hardCleanupReserveMs = Math.max(1, Math.min(250, Math.floor(stopGraceMs / 3)));
+  // Reserve most of short grace windows for forced watcher/lease cleanup. Slow
+  // CI hosts showed that 100ms was not enough to reap both process groups and
+  // remove the lease before the hard cutoff, even after SIGKILL.
+  const hardCleanupReserveMs = Math.max(1, Math.min(500, Math.floor(stopGraceMs * 2 / 3)));
   const hardStopAt = new Date(options.cutoff.getTime() - hardCleanupReserveMs);
   const emit = (event: Omit<SupervisorServiceEvent, "timestamp">) => options.onEvent?.({ ...event, timestamp: new Date().toISOString() });
   let restarts = 0;

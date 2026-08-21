@@ -136,6 +136,14 @@ cp .env.example .env
 npm run scan
 ```
 
+To preserve a read-only baseline and record only newly opened markets through the competition cutoff:
+
+```bash
+npm run sentinel -- --cutoff 2026-08-23T23:59:00Z --interval-ms 60000
+```
+
+The sentinel records the initial open market IDs, then writes one hash-linked review receipt for each new market or material change to its wording, outcomes, or close time. Each receipt includes read-only 0.1-share quote probes. An unreviewed candidate is rejected without changing rules or submitting an order; unchanged rejections are suppressed. The sentinel refuses to start if either live switch is enabled.
+
 Before enabling the watcher, run the live-trading preflight:
 
 ```bash
