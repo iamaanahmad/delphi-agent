@@ -1,10 +1,10 @@
 import "dotenv/config";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { COMPETITION_TRADING_CUTOFF } from "./competition.js";
 import { DEFAULT_LEDGER_PATH } from "./receipt.js";
 import { loadResolutionRules } from "./watcher.js";
 import { runWatcherSupervisor, type SupervisorEvent } from "./supervisor.js";
-
-export const COMPETITION_TRADING_CUTOFF = new Date("2026-08-23T23:59:00.000Z");
 
 const option = (args: string[], name: string): string | undefined => {
   const index = args.indexOf(name);
@@ -42,9 +42,10 @@ async function main() {
   const stop = () => controller.abort();
   process.once("SIGINT", stop);
   process.once("SIGTERM", stop);
+  const watcherCli = resolve(dirname(fileURLToPath(import.meta.url)), "cli.js");
   const result = await runWatcherSupervisor({
-    command: "npm",
-    args: ["run", "watch", "--", ruleFile, "--interval-ms", process.env.SETTLEMENT_EDGE_POLL_INTERVAL_MS ?? "60000"],
+    command: process.execPath,
+    args: [watcherCli, "watch", ruleFile, "--interval-ms", process.env.SETTLEMENT_EDGE_POLL_INTERVAL_MS ?? "60000"],
     cwd: resolve("."),
     env: process.env,
     ledgerPath,
@@ -59,6 +60,7 @@ async function main() {
     onEvent: printEvent,
   });
   console.log(`Supervisor result: ${result.reason}; recovered ${result.restarts} child failure(s).`);
+  if (result.reason === "monitor-failure") process.exitCode = 1;
 }
 
 try {

@@ -41,6 +41,38 @@ function processIsAlive(pid: number): boolean {
   }
 }
 
+export async function clearDeadLedgerWriterLease(
+  ledgerPath: string,
+  expectedOwner: Pick<LedgerWriterOwner, "pid" | "token">,
+): Promise<boolean> {
+  const lockDirectory = ledgerLockDirectory(ledgerPath);
+  const ownerFile = `${lockDirectory}/owner.json`;
+  let owner: LedgerWriterOwner;
+  try {
+    owner = await readOwner(ownerFile);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+  if (
+    owner.pid !== expectedOwner.pid
+    || owner.token !== expectedOwner.token
+    || owner.ledgerPath !== resolve(ledgerPath)
+  ) {
+    throw new Error("ledger writer lease ownership changed; refusing forced cleanup");
+  }
+  if (processIsAlive(owner.pid)) throw new Error(`ledger writer lease owner PID ${owner.pid} is still alive`);
+  const deadDirectory = `${lockDirectory}.dead.${owner.token}.${randomUUID()}`;
+  try {
+    await rename(lockDirectory, deadDirectory);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+  await rm(deadDirectory, { recursive: true });
+  return true;
+}
+
 async function readOwner(ownerFile: string): Promise<LedgerWriterOwner> {
   const owner = JSON.parse(await readFile(ownerFile, "utf8")) as Partial<LedgerWriterOwner>;
   if (

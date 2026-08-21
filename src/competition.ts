@@ -1,0 +1,1 @@
+export const COMPETITION_TRADING_CUTOFF = new Date("2026-08-23T23:59:00.000Z");
