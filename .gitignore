@@ -5,6 +5,8 @@ coverage/
 artifacts/*.jsonl
 artifacts/*.log
 artifacts/*watcher-state*.json
+artifacts/*sentinel-state*.json
+artifacts/*review-receipts*.jsonl
 artifacts/*.heartbeat.json
 artifacts/*.writer.lock/
 !artifacts/.gitkeep

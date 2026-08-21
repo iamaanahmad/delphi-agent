@@ -12,6 +12,7 @@
     "check": "npm run build && npm test",
     "demo": "tsx src/cli.ts replay fixtures/wikipedia-threshold.json",
     "scan": "tsx src/cli.ts scan",
+    "sentinel": "npm run build --silent && node dist/src/sentinel-cli.js",
     "preflight": "tsx src/preflight-cli.ts",
     "reconcile": "tsx src/cli.ts reconcile",
     "settle": "tsx src/cli.ts settle",
