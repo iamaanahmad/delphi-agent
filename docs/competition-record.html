@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Settlement Edge's source-backed Delphi Agent Arena closing record: 0 orders, 0 ambiguous trades, 1,000.0000 TST intact, and 0.0000 TST realized P&amp;L.">
+    <meta name="theme-color" content="#080d18">
+    <meta property="og:title" content="The Settlement Edge competition record">
+    <meta property="og:description" content="An honest record of the no-trade result, fail-closed calls, full-window scan, and later recovery tests.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://iamaanahmad.github.io/delphi-agent/competition-record.html">
+    <title>The Settlement Edge competition record</title>
+    <link rel="canonical" href="https://iamaanahmad.github.io/delphi-agent/competition-record.html">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="site.css">
+    <script defer src="site-analytics.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav shell" aria-label="Primary navigation">
+        <a class="wordmark" href="./" aria-label="Settlement Edge home"><span class="wordmark-mark" aria-hidden="true"></span>Settlement Edge</a>
+        <div class="nav-links"><a href="./">Home</a><a href="#no-trade">No-trade calls</a><a href="https://github.com/iamaanahmad/delphi-agent">GitHub</a></div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="record-hero shell">
+        <div class="record-hero-copy">
+          <p class="eyebrow">Competition closing record · August 24, 2026</p>
+          <h1>The agent made no trade. That is the record.</h1>
+          <p class="hero-copy">Settlement Edge finished observed unranked with 1,000.0000 TST intact, 0 submitted orders, 0 ambiguous trades, and 0.0000 TST realized P&amp;L.</p>
+          <a class="primary-action" href="competition-closing-record.json">Open the machine-readable record</a>
+        </div>
+        <figure class="closing-receipt" aria-labelledby="closing-receipt-title">
+          <figcaption id="closing-receipt-title">Observed competition result</figcaption>
+          <div class="receipt-status"><span aria-hidden="true"></span>Observed · unranked</div>
+          <strong class="receipt-balance">1,000.0000 <small>TST</small></strong>
+          <dl>
+            <div><dt>Realized P&amp;L</dt><dd>0.0000 TST</dd></div>
+            <div><dt>Submitted orders</dt><dd>0</dd></div>
+            <div><dt>Ambiguous trades</dt><dd>0</dd></div>
+            <div><dt>Wallet ETH</dt><dd>0.0389958753295</dd></div>
+          </dl>
+          <p>Closing read · 2026-08-24 00:48 UTC</p>
+        </figure>
+      </section>
+
+      <section class="record-strip" aria-label="Closing audit counts">
+        <div class="shell record-metrics">
+          <p><strong>3,393</strong><span>successful sentinel polls</span></p>
+          <p><strong>5</strong><span>new markets reviewed</span></p>
+          <p><strong>2,530</strong><span>hash-valid live records</span></p>
+          <p><strong>0</strong><span>positions at close</span></p>
+        </div>
+      </section>
+
+      <article class="record-body shell">
+        <section class="article-section">
+          <div class="article-heading">
+            <p class="eyebrow">What was observed</p>
+            <h2>No rank is being invented.</h2>
+          </div>
+          <div class="article-prose">
+            <p>The official leaderboard listed 163 agents at the post-cutoff read and returned no exact match for the registered wallet. The supported statement is “observed unranked,” not a numeric placement. Remaining settlements and final judging could still change the published table.</p>
+            <p>Wallet and indexed on-chain reads found no buys, sells, positions, redemptions, or liquidations. The live ledger's full hash chain verified independently, with every transaction state either absent or not submitted.</p>
+          </div>
+        </section>
+
+        <section class="rejection-section" id="no-trade" aria-labelledby="rejection-title">
+          <div class="record-section-head">
+            <p class="eyebrow">Two representative no-trade calls</p>
+            <h2 id="rejection-title">The missing proof mattered more than the available price.</h2>
+          </div>
+          <div class="rejection-grid">
+            <article>
+              <span>01 · UAP records</span>
+              <h3>Novelty and timing were not provable.</h3>
+              <p>AARO's newest listed release predated the market window. ODNI's timestamped feed showed no in-window UAP item and no field proving an attachment was previously unreleased. Without both facts, the agent rejected the market.</p>
+            </article>
+            <article>
+              <span>02 · WTI settlement</span>
+              <h3>The decisive number arrived too late.</h3>
+              <p>CME's official settlement calculation used trading activity through the market's exact close and published afterward. A decisive official value could not exist strictly before close, so the agent rejected the trade.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="article-section">
+          <div class="article-heading">
+            <p class="eyebrow">Full-window scan</p>
+            <h2>Every new candidate stayed closed by default.</h2>
+          </div>
+          <div class="scan-sequence" aria-label="Final-window sentinel sequence">
+            <div><time datetime="2026-08-21T14:57:51Z">Aug 21 · 14:57 UTC</time><p>Captured the open-market baseline with both execution switches off.</p></div>
+            <div><span>5 candidate reviews</span><p>Each new market lacked a reviewed exact mapping or provable pre-close official evidence. Quotes alone never authorized a trade.</p></div>
+            <div><time datetime="2026-08-23T23:59:00Z">Aug 23 · 23:59 UTC</time><p>Wrote a hash-valid cutoff receipt after 3,393 successful polls and 0 poll failures, then released the writer lease.</p></div>
+          </div>
+        </section>
+
+        <section class="recovery-panel" aria-labelledby="recovery-title">
+          <div>
+            <p class="eyebrow">Reliability record</p>
+            <h2 id="recovery-title">The outage stays in the story.</h2>
+            <p>The earlier Gemini watcher was silent for 11 hours 10 minutes. The surviving logs prove the gap, but not the external event that ended the process.</p>
+          </div>
+          <div class="recovery-results">
+            <p><strong>110 ms</strong> forced child-exit recovery</p>
+            <p><strong>115 ms</strong> stale-heartbeat recovery</p>
+            <p><strong>1.151 s</strong> forced supervisor-exit recovery</p>
+            <small>Later no-trade fault-injection tests with execution disabled. These were not live competition recoveries.</small>
+          </div>
+        </section>
+
+        <section class="article-section">
+          <div class="article-heading">
+            <p class="eyebrow">Observed vs simulated</p>
+            <h2>Replay output never enters the score.</h2>
+          </div>
+          <div class="result-split">
+            <div><span>Observed competition</span><strong>0.0000 TST</strong><p>Realized P&amp;L from zero submitted orders.</p></div>
+            <div><span>Simulated replay</span><strong>5 decisions</strong><p>Twenty-five hash-valid replay records, isolated from live orders and realized competition P&amp;L.</p></div>
+          </div>
+        </section>
+
+        <section class="sources" aria-labelledby="sources-title">
+          <h2 id="sources-title">Evidence</h2>
+          <ul>
+            <li><a href="competition-closing-record.json">Public machine-readable closing record</a></li>
+            <li><a href="https://github.com/iamaanahmad/delphi-agent/pull/28">PR #28: child recovery and single-writer protection</a></li>
+            <li><a href="https://github.com/iamaanahmad/delphi-agent/pull/29">PR #29: supervisor recovery through cutoff</a></li>
+            <li><a href="https://www.cmegroup.com/trading/energy/files/NYMEX_Energy_Futures_Daily_Settlement_Procedure.pdf">CME WTI settlement procedure</a></li>
+            <li><a href="https://www.odni.gov/?rest_route=/wp/v2/dlm_download">ODNI machine-readable download feed</a></li>
+          </ul>
+          <p>Observed result checked 2026-08-24. Replay remains simulation.</p>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer"><div class="footer-inner shell"><div class="footer-links"><a href="./">Home</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a><a href="mailto:dorahacks@mail.tin.computer">Contact</a></div><span>Built for the Delphi Agent Arena · <a class="tin-credit" href="https://tin.computer"><span class="tin-mark" aria-hidden="true"></span>Growth by Tin</a></span></div></footer>
+  </body>
+</html>

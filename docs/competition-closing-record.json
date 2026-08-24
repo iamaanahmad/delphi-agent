@@ -1,0 +1,101 @@
+{
+  "recordType": "settlement-edge-public-competition-closing-record",
+  "generatedAt": "2026-08-24T00:48:41.484Z",
+  "tradingCutoff": "2026-08-23T23:59:00.000Z",
+  "scope": "Observed competition results are reported separately from simulated replay output. No numeric rank is inferred.",
+  "observedCompetitionResult": {
+    "standing": "observed unranked",
+    "leaderboardSnapshot": {
+      "observedAt": "2026-08-24T00:48:19.434Z",
+      "listedAgents": 163,
+      "exactRegisteredWalletMatch": false,
+      "qualification": "The official leaderboard published no row for the exact registered wallet. Final judging may still update as remaining markets settle."
+    },
+    "wallet": {
+      "observedAt": "2026-08-24T00:45:40.764Z",
+      "tst": "1000.0000",
+      "eth": "0.0389958753295",
+      "positions": 0
+    },
+    "submittedOrders": 0,
+    "ambiguousTrades": 0,
+    "settlementActions": 0,
+    "redemptions": 0,
+    "liquidations": 0,
+    "realizedPnlTst": "0.0000"
+  },
+  "fullWindowSentinel": {
+    "baselineCapturedAt": "2026-08-21T14:57:51.424Z",
+    "successfulPolls": 3393,
+    "pollFailures": 0,
+    "candidateReviews": 5,
+    "acceptedCandidates": 0,
+    "lastPollAt": "2026-08-23T23:58:43.749Z",
+    "cutoffReceiptAt": "2026-08-23T23:59:00.005Z",
+    "cutoffReason": "cutoff",
+    "submittedOrders": 0,
+    "ambiguousTrades": 0,
+    "ledgerSha256": "9aec3410209f76ca362fc23b2eb4c6be0bb33c83b358673fbf174b40fce77128"
+  },
+  "representativeFailClosedRejections": [
+    {
+      "market": "UAP records",
+      "close": "2026-08-21T14:00:00.000Z",
+      "verdict": "reject",
+      "reason": "No official machine-readable source proved both previously unreleased content and public availability before close. AARO's newest listed release was August 7; ODNI's timestamped feed contained no in-window UAP item and no field proving attachment novelty.",
+      "sources": [
+        "https://agent-competition.gensyn.ai/market/f27eb55e-54eb-4b98-88d4-8c1973d2d221",
+        "https://www.aaro.mil/Next-AARO-Home-redesign/Next-Parent/Next-UAP-Report-Documents/",
+        "https://www.odni.gov/?rest_route=/wp/v2/dlm_download"
+      ]
+    },
+    {
+      "market": "WTI front-month crude settlement",
+      "close": "2026-08-21T18:30:00.000Z",
+      "verdict": "reject",
+      "reason": "The official CME settlement calculation used activity through the exact market close and published afterward, so decisive official evidence could not exist strictly before close.",
+      "sources": [
+        "https://www.cmegroup.com/trading/energy/files/NYMEX_Energy_Futures_Daily_Settlement_Procedure.pdf",
+        "https://www.cmegroup.com/trading/about-settlements.html"
+      ]
+    }
+  ],
+  "reliabilityRecord": {
+    "observedOutage": {
+      "from": "2026-08-20T16:25:40.713Z",
+      "to": "2026-08-21T03:35:47.487Z",
+      "duration": "11h 10m",
+      "qualification": "The surviving log and ledger establish the visibility gap, but not the external event that ended the original process."
+    },
+    "laterNoTradeFaultInjection": {
+      "forcedChildExitRecoveryMs": 110,
+      "staleHeartbeatRecoveryMs": 115,
+      "forcedSupervisorExitRecoveryMs": 1151,
+      "submittedOrders": 0,
+      "qualification": "These are later fault-injection results with execution disabled, not live competition recoveries.",
+      "pullRequests": [
+        "https://github.com/iamaanahmad/delphi-agent/pull/28",
+        "https://github.com/iamaanahmad/delphi-agent/pull/29"
+      ]
+    }
+  },
+  "ledgers": {
+    "live": {
+      "records": 2530,
+      "hashChainValid": true,
+      "fileSha256": "fef53700ccb4a900fd21ba26ca1f5df4c0ef89ff9cd548561182e58e8bd95ff6",
+      "decisions": 0,
+      "submitted": 0,
+      "ambiguous": 0
+    },
+    "replay": {
+      "records": 25,
+      "hashChainValid": true,
+      "fileSha256": "0ef3cef927859da6a2efa8abca59481131cb10e0d48ffc56670bae03e39c82d4",
+      "simulatedDecisions": 5,
+      "submitted": 0,
+      "ambiguous": 0,
+      "qualification": "All replay decisions are simulated and excluded from live orders and realized competition P&L."
+    }
+  }
+}

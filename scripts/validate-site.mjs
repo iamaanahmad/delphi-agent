@@ -23,6 +23,10 @@ const pages = [
     path: "docs/settlement-edge-vs-gnosis-prediction-market-agent.html",
     canonical: "https://iamaanahmad.github.io/delphi-agent/settlement-edge-vs-gnosis-prediction-market-agent.html",
   },
+  {
+    path: "docs/competition-record.html",
+    canonical: "https://iamaanahmad.github.io/delphi-agent/competition-record.html",
+  },
 ];
 
 for (const page of pages) {
@@ -130,6 +134,40 @@ const searchPages = [
   },
 ];
 
+const competitionRecord = await readFile(resolve(root, "docs/competition-record.html"), "utf8");
+for (const text of [
+  "observed unranked",
+  "1,000.0000 TST",
+  "0 submitted orders",
+  "0 ambiguous trades",
+  "0.0000 TST",
+  "3,393 successful polls",
+  "11 hours 10 minutes",
+  "110 ms",
+  "115 ms",
+  "1.151 s",
+  "Later no-trade fault-injection tests",
+  "Replay output never enters the score",
+  "competition-closing-record.json",
+]) {
+  if (!competitionRecord.includes(text)) {
+    throw new Error(`docs/competition-record.html is missing required competition record text: ${text}`);
+  }
+}
+
+const closingRecord = JSON.parse(await readFile(resolve(root, "docs/competition-closing-record.json"), "utf8"));
+if (
+  closingRecord.observedCompetitionResult.standing !== "observed unranked" ||
+  closingRecord.observedCompetitionResult.submittedOrders !== 0 ||
+  closingRecord.observedCompetitionResult.ambiguousTrades !== 0 ||
+  closingRecord.observedCompetitionResult.realizedPnlTst !== "0.0000" ||
+  closingRecord.fullWindowSentinel.successfulPolls !== 3393 ||
+  closingRecord.ledgers.live.hashChainValid !== true ||
+  closingRecord.ledgers.replay.hashChainValid !== true
+) {
+  throw new Error("docs/competition-closing-record.json does not preserve the verified closing semantics");
+}
+
 for (const page of searchPages) {
   const html = await readFile(resolve(root, page.path), "utf8");
   if (!html.includes('href="./"')) {
@@ -146,7 +184,7 @@ if (!index.includes("prediction-market-trading-agent-vs-forecasting-agent.html")
   throw new Error("docs/index.html is missing internal links to the search pages");
 }
 
-for (const relativePath of ["docs/site.css", "docs/favicon.svg", "docs/settlement-edge-demo.svg"]) {
+for (const relativePath of ["docs/site.css", "docs/favicon.svg", "docs/settlement-edge-demo.svg", "docs/competition-closing-record.json"]) {
   await access(resolve(root, relativePath));
 }
 
