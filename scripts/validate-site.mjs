@@ -42,15 +42,16 @@ for (const page of pages) {
 
 const index = await readFile(resolve(root, "docs/index.html"), "utf8");
 const requiredIndexText = [
-  "0 live orders",
-  "0 TST",
-  "1,000 TST available in the registered wallet",
-  "70 passing tests",
+  "The competition closed on August 23, 2026.",
+  "1,000.0000 TST intact",
+  "0 submitted orders",
+  "0 ambiguous trades",
+  "0.0000 TST realized P&amp;L",
   "+1.4292 TST",
   "2.5200 TST simulated cost",
   "supporting evidence, not competition performance",
   "https://github.com/iamaanahmad/delphi-agent",
-  "https://dorahacks.io/hackathon/delphi-agent-competition/detail",
+  'href="competition-record.html"',
   "terms.html",
   "privacy.html",
   "mailto:dorahacks@mail.tin.computer",
@@ -60,6 +61,17 @@ for (const text of requiredIndexText) {
   if (!index.includes(text)) {
     throw new Error(`docs/index.html is missing required text: ${text}`);
   }
+}
+
+for (const staleText of ["Observed on August 21, 2026", "current competition result", "Active reviewed source", "See the Delphi competition"]) {
+  if (index.includes(staleText)) {
+    throw new Error(`docs/index.html retains stale live-competition text: ${staleText}`);
+  }
+}
+
+const competitionRecordLinks = index.match(/href="competition-record\.html"/g) ?? [];
+if (competitionRecordLinks.length !== 1) {
+  throw new Error(`docs/index.html must link to the competition record exactly once; found ${competitionRecordLinks.length}`);
 }
 
 const privacy = await readFile(resolve(root, "docs/privacy.html"), "utf8");
