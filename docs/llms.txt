@@ -2,13 +2,14 @@
 
 > Settlement Edge is an open-source TypeScript command-line agent for the Gensyn Delphi Agent Arena. It turns reviewed, machine-readable settlement facts into quote-aware, risk-capped competition decisions and hash-linked receipts.
 
-The credential-free decision loop is proven locally. Settlement Edge has observed 0 live orders and 0 TST realized competition profit. Its checked replay is a simulation, not live performance.
+The credential-free decision loop is proven locally. Settlement Edge closed the competition observed unranked with 0 live orders, 0 ambiguous trades, and 0 TST realized competition profit. Its checked replay is a simulation, not live performance.
 
 ## Core project
 
 - [Source repository](https://github.com/iamaanahmad/delphi-agent): Code, setup, safety boundaries, tests, and current observed status.
 - [Architecture](https://github.com/iamaanahmad/delphi-agent/blob/main/docs/architecture.md): Evidence validation, estimation, quote-aware sizing, execution gates, and receipt design.
 - [Reviewed market rules](https://github.com/iamaanahmad/delphi-agent/blob/main/docs/live-market-rules.md): Exact primary sources and fail-closed outcome mappings.
+- [Competition closing record](https://iamaanahmad.github.io/delphi-agent/competition-record.html): The source-backed no-trade result, representative rejections, full-window scan, and later fault-injection recoveries.
 - [Terms of use](https://iamaanahmad.github.io/delphi-agent/terms.html): Competition-testnet scope, operator responsibilities, and third-party dependencies.
 - [Privacy notice](https://iamaanahmad.github.io/delphi-agent/privacy.html): Local data handling, provider transfers, storage, and deletion.
 
