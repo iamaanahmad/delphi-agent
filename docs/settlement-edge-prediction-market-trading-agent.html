@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Settlement Edge is an open-source prediction market trading agent that validates settlement facts, requests live quotes, applies risk caps, and records each decision.">
+    <meta name="theme-color" content="#080d18">
+    <meta property="og:title" content="Settlement Edge: evidence-first prediction market trading agent">
+    <meta property="og:description" content="How Settlement Edge turns reviewed facts into quote-aware decisions, fails closed, and separates simulated mechanics from observed results.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html">
+    <title>Settlement Edge: evidence-first prediction market trading agent</title>
+    <link rel="canonical" href="https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="site.css">
+    <script defer src="site-analytics.js"></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "Settlement Edge: evidence-first prediction market trading agent",
+        "description": "A proof-backed explainer of Settlement Edge's evidence validation, quote-aware sizing, risk gates, decision receipts, and observed competition result.",
+        "url": "https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html",
+        "mainEntityOfPage": "https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html",
+        "dateModified": "2026-08-25",
+        "about": {
+          "@type": "SoftwareApplication",
+          "name": "Settlement Edge",
+          "url": "https://iamaanahmad.github.io/delphi-agent/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav shell" aria-label="Primary navigation">
+        <a class="wordmark" href="./" aria-label="Settlement Edge home"><span class="wordmark-mark" aria-hidden="true"></span>Settlement Edge</a>
+        <div class="nav-links"><a href="./">Home</a><a href="#how-it-works">How it works</a><a href="https://github.com/iamaanahmad/delphi-agent">GitHub</a></div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="record-hero shell">
+        <div class="record-hero-copy">
+          <p class="eyebrow">Settlement Edge explainer</p>
+          <h1>Settlement facts in. Risk-capped decisions out.</h1>
+          <p class="hero-copy">Settlement Edge is an open-source TypeScript agent for markets where an authoritative fact can resolve the question. It validates the fact, checks a live quote, and acts only if every execution gate passes.</p>
+          <a class="primary-action" href="https://github.com/iamaanahmad/delphi-agent">Inspect Settlement Edge on GitHub</a>
+        </div>
+        <figure class="closing-receipt" aria-labelledby="explainer-receipt-title">
+          <figcaption id="explainer-receipt-title">Verified closing state</figcaption>
+          <div class="receipt-status"><span aria-hidden="true"></span>Observed · no trade</div>
+          <strong class="receipt-balance">1,000.0000 <small>TST</small></strong>
+          <dl>
+            <div><dt>Submitted orders</dt><dd>0</dd></div>
+            <div><dt>Ambiguous trades</dt><dd>0</dd></div>
+            <div><dt>Realized P&amp;L</dt><dd>0.0000 TST</dd></div>
+          </dl>
+          <p>Verified post-cutoff · August 24, 2026</p>
+        </figure>
+      </section>
+
+      <section class="article-fact-strip">
+        <div class="shell fact-grid">
+          <p><strong>Default:</strong>&nbsp; dry-run, with two explicit switches required for execution.</p>
+          <p><strong>Boundary:</strong>&nbsp; competition-testnet software, not a mainnet trading system.</p>
+        </div>
+      </section>
+
+      <article class="article-body shell" id="how-it-works">
+        <section class="article-section">
+          <div class="article-heading">
+            <p class="eyebrow">What it does</p>
+            <h2>Execution has to earn its way through.</h2>
+          </div>
+          <div class="article-prose">
+            <p>Each reviewed market rule names the primary source, value, timestamp requirements, threshold, and outcome mapping. Malformed, stale, future-dated, off-rule, or unavailable evidence fails closed.</p>
+            <p>If the evidence passes, the agent estimates conservatively, requests executable LMSR quotes for small sizes, and rejects orders outside its edge, spend, bankroll, price-impact, or slippage limits.</p>
+          </div>
+        </section>
+
+        <section class="decision-ladder" aria-labelledby="explainer-loop-title">
+          <div>
+            <p class="eyebrow">One auditable loop</p>
+            <h2 id="explainer-loop-title">Fact to refusal or trade.</h2>
+          </div>
+          <ol>
+            <li><span>01</span><div><strong>Verify</strong><p>Match fresh primary-source evidence to the exact rule.</p></div></li>
+            <li><span>02</span><div><strong>Quote</strong><p>Test tiny sizes on the live competition curve.</p></div></li>
+            <li><span>03</span><div><strong>Gate</strong><p>Reject weak edge, high impact, stale quotes, or excess risk.</p></div></li>
+            <li><span>04</span><div><strong>Record</strong><p>Hash-link the evidence, quote, policy result, and lifecycle state.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="article-section">
+          <div class="article-heading">
+            <p class="eyebrow">Proof boundary</p>
+            <h2>The no-trade result is the honest result.</h2>
+          </div>
+          <div class="article-prose">
+            <p>The competition record contains 0 submitted orders, 0 ambiguous trades, 1,000.0000 TST, and 0.0000 TST realized P&amp;L. The agent rejected candidate markets when official pre-close evidence was incomplete or arrived too late. Its positive replay output is simulated mechanics, not observed performance.</p>
+          </div>
+        </section>
+
+        <section class="sources" aria-labelledby="explainer-sources-title">
+          <h2 id="explainer-sources-title">Evidence and next read</h2>
+          <ul>
+            <li><a href="competition-record.html">Verified competition closing record</a></li>
+            <li><a href="competition-closing-record.json">Machine-readable closing record</a></li>
+            <li><a href="prediction-market-trading-agent-vs-forecasting-agent.html">Trading agent vs forecasting agent</a></li>
+            <li><a href="https://github.com/iamaanahmad/delphi-agent/blob/main/docs/architecture.md">Architecture and safety boundaries</a></li>
+          </ul>
+          <p>Observed result checked August 24, 2026. No numeric rank is claimed.</p>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer"><div class="footer-inner shell"><div class="footer-links"><a href="./">Home</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a><a href="mailto:dorahacks@mail.tin.computer">Contact</a></div><span>Built for the Delphi Agent Arena · <a class="tin-credit" href="https://tin.computer"><span class="tin-mark" aria-hidden="true"></span>Growth by Tin</a></span></div></footer>
+  </body>
+</html>

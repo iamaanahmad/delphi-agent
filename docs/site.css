@@ -1553,6 +1553,26 @@ h3 {
     padding-block: 56px;
   }
 
+  .comparison-table {
+    min-width: 0;
+    table-layout: fixed;
+    font-size: 12px;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 14px 9px;
+    overflow-wrap: anywhere;
+  }
+
+  .comparison-table thead th {
+    font-size: 9px;
+  }
+
+  .comparison-table tbody th {
+    width: 25%;
+  }
+
   .decision-ladder,
   .pick-grid article,
   .article-next {
