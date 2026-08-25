@@ -2,6 +2,18 @@ import { access, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = process.cwd();
+const visibleMainWordCount = (html) => {
+  const main = html.match(/<main>[\s\S]*?<\/main>/)?.[0] ?? "";
+  const text = main
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&(?:amp|nbsp|rarr|check);/g, " ")
+    .replace(/&#?\w+;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text ? text.split(/\s+/).length : 0;
+};
+
 const pages = [
   {
     path: "docs/index.html",
@@ -18,6 +30,10 @@ const pages = [
   {
     path: "docs/prediction-market-trading-agent-vs-forecasting-agent.html",
     canonical: "https://iamaanahmad.github.io/delphi-agent/prediction-market-trading-agent-vs-forecasting-agent.html",
+  },
+  {
+    path: "docs/settlement-edge-prediction-market-trading-agent.html",
+    canonical: "https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html",
   },
   {
     path: "docs/settlement-edge-vs-gnosis-prediction-market-agent.html",
@@ -41,6 +57,10 @@ for (const page of pages) {
 }
 
 const index = await readFile(resolve(root, "docs/index.html"), "utf8");
+if (visibleMainWordCount(index) > 440) {
+  throw new Error(`docs/index.html exceeds its 440-word page budget: ${visibleMainWordCount(index)}`);
+}
+
 const requiredIndexText = [
   "The competition closed on August 23, 2026.",
   "1,000.0000 TST intact",
@@ -137,7 +157,12 @@ const searchPages = [
   {
     path: "docs/prediction-market-trading-agent-vs-forecasting-agent.html",
     canonical: "https://iamaanahmad.github.io/delphi-agent/prediction-market-trading-agent-vs-forecasting-agent.html",
-    required: ["Prediction market trading agent vs forecasting agent", "0 live orders", "Simulated receipt"],
+    required: ["Prediction market trading agent vs forecasting agent: when settlement evidence wins", "0 submitted orders", "1,000.0000 TST"],
+  },
+  {
+    path: "docs/settlement-edge-prediction-market-trading-agent.html",
+    canonical: "https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html",
+    required: ["Settlement Edge explainer", "0 submitted orders", "0 ambiguous trades", "1,000.0000"],
   },
   {
     path: "docs/settlement-edge-vs-gnosis-prediction-market-agent.html",
@@ -196,8 +221,11 @@ for (const page of searchPages) {
   }
 }
 
-if (!index.includes("prediction-market-trading-agent-vs-forecasting-agent.html") || !index.includes("settlement-edge-vs-gnosis-prediction-market-agent.html")) {
+if (!index.includes("prediction-market-trading-agent-vs-forecasting-agent.html") || !index.includes("settlement-edge-prediction-market-trading-agent.html")) {
   throw new Error("docs/index.html is missing internal links to the search pages");
+}
+if ((index.match(/class="guide-links"/g) ?? []).length !== 1) {
+  throw new Error("docs/index.html must contain exactly one internal guide-link group");
 }
 
 for (const relativePath of ["docs/site.css", "docs/favicon.svg", "docs/settlement-edge-demo.svg", "docs/competition-closing-record.json"]) {
@@ -220,11 +248,39 @@ for (const type of ["Organization", "SoftwareApplication"]) {
   }
 }
 
+for (const page of searchPages.slice(0, 2)) {
+  const html = await readFile(resolve(root, page.path), "utf8");
+  const ceiling = page.path.includes("vs-forecasting-agent") ? 600 : 440;
+  const words = visibleMainWordCount(html);
+  if (words > ceiling) {
+    throw new Error(`${page.path} exceeds its ${ceiling}-word page budget: ${words}`);
+  }
+  if ((html.match(/class="primary-action"/g) ?? []).length !== 1) {
+    throw new Error(`${page.path} must contain exactly one primary action`);
+  }
+  if ((html.match(/class="sources"/g) ?? []).length !== 1) {
+    throw new Error(`${page.path} must contain exactly one internal evidence-link group`);
+  }
+  const scripts = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+  if (scripts.length !== 1) {
+    throw new Error(`${page.path} must contain exactly one JSON-LD block`);
+  }
+  const article = JSON.parse(scripts[0][1]);
+  if (article["@type"] !== "TechArticle" || article.url !== page.canonical || !article.headline || !article.about) {
+    throw new Error(`${page.path} is missing aligned TechArticle structured data`);
+  }
+}
+
 const software = structuredData.find((entry) => entry["@type"] === "SoftwareApplication");
 for (const field of ["name", "url", "description", "applicationCategory", "operatingSystem", "license", "downloadUrl"]) {
   if (!software[field]) {
     throw new Error(`SoftwareApplication structured data is missing ${field}`);
   }
+}
+const searchPageUrls = searchPages.slice(0, 2).map((page) => page.canonical);
+const subjectUrls = Array.isArray(software.subjectOf) ? software.subjectOf.map((entry) => entry.url) : [];
+if (searchPageUrls.some((url) => !subjectUrls.includes(url))) {
+  throw new Error("SoftwareApplication structured data does not cover both proof-backed search pages");
 }
 
 const publicFiles = ["docs/robots.txt", "docs/sitemap.xml", "docs/llms.txt"];
@@ -251,7 +307,7 @@ if ((sitemap.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/g) ?? []).length !== c
 }
 
 const llms = await readFile(resolve(root, "docs/llms.txt"), "utf8");
-for (const text of ["# Settlement Edge", "0 live orders", "0 TST realized competition profit", ...canonicalUrls]) {
+for (const text of ["# Settlement Edge", "0 submitted orders", "0 ambiguous trades", "1,000.0000 TST", "0.0000 TST realized competition profit", ...canonicalUrls]) {
   if (!llms.includes(text)) {
     throw new Error(`docs/llms.txt is missing required text: ${text}`);
   }

@@ -2,7 +2,7 @@
 
 > Settlement Edge is an open-source TypeScript command-line agent for the Gensyn Delphi Agent Arena. It turns reviewed, machine-readable settlement facts into quote-aware, risk-capped competition decisions and hash-linked receipts.
 
-The credential-free decision loop is proven locally. Settlement Edge closed the competition observed unranked with 0 live orders, 0 ambiguous trades, and 0 TST realized competition profit. Its checked replay is a simulation, not live performance.
+The credential-free decision loop is proven locally. Settlement Edge closed the competition observed unranked with 0 submitted orders, 0 ambiguous trades, 1,000.0000 TST, and 0.0000 TST realized competition profit. Its checked replay is a simulation, not live performance.
 
 ## Core project
 
@@ -15,7 +15,8 @@ The credential-free decision loop is proven locally. Settlement Edge closed the 
 
 ## Guides
 
-- [Prediction market trading agent vs forecasting agent](https://iamaanahmad.github.io/delphi-agent/prediction-market-trading-agent-vs-forecasting-agent.html): When settlement evidence, live quotes, and risk gates change the job.
+- [Prediction market trading agent vs forecasting agent: when settlement evidence wins](https://iamaanahmad.github.io/delphi-agent/prediction-market-trading-agent-vs-forecasting-agent.html): A proof-backed guide to forecasts, executable quotes, risk gates, and verified outcomes.
+- [Settlement Edge: evidence-first prediction market trading agent](https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html): How reviewed facts become quote-aware refusals or trades, with the observed closing state kept separate from simulation.
 - [Settlement Edge vs Gnosis Prediction Market Agent](https://iamaanahmad.github.io/delphi-agent/settlement-edge-vs-gnosis-prediction-market-agent.html): A narrow Delphi settlement trader compared with a broader multi-venue agent library.
 
 ## Operational boundaries
