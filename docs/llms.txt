@@ -17,6 +17,7 @@ The credential-free decision loop is proven locally. Settlement Edge closed the 
 
 - [Prediction market trading agent vs forecasting agent: when settlement evidence wins](https://iamaanahmad.github.io/delphi-agent/prediction-market-trading-agent-vs-forecasting-agent.html): A proof-backed guide to forecasts, executable quotes, risk gates, and verified outcomes.
 - [Settlement Edge: evidence-first prediction market trading agent](https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html): How reviewed facts become quote-aware refusals or trades, with the observed closing state kept separate from simulation.
+- [Prediction market software: 6 checks before you automate](https://iamaanahmad.github.io/delphi-agent/prediction-market-software.html): A practical selection guide for platforms, analytics tools, and trading agents.
 - [Settlement Edge vs Gnosis Prediction Market Agent](https://iamaanahmad.github.io/delphi-agent/settlement-edge-vs-gnosis-prediction-market-agent.html): A narrow Delphi settlement trader compared with a broader multi-venue agent library.
 
 ## Operational boundaries
