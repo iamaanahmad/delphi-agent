@@ -36,6 +36,10 @@ const pages = [
     canonical: "https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html",
   },
   {
+    path: "docs/prediction-market-software.html",
+    canonical: "https://iamaanahmad.github.io/delphi-agent/prediction-market-software.html",
+  },
+  {
     path: "docs/settlement-edge-vs-gnosis-prediction-market-agent.html",
     canonical: "https://iamaanahmad.github.io/delphi-agent/settlement-edge-vs-gnosis-prediction-market-agent.html",
   },
@@ -158,11 +162,19 @@ const searchPages = [
     path: "docs/prediction-market-trading-agent-vs-forecasting-agent.html",
     canonical: "https://iamaanahmad.github.io/delphi-agent/prediction-market-trading-agent-vs-forecasting-agent.html",
     required: ["Prediction market trading agent vs forecasting agent: when settlement evidence wins", "0 submitted orders", "1,000.0000 TST"],
+    ceiling: 600,
   },
   {
     path: "docs/settlement-edge-prediction-market-trading-agent.html",
     canonical: "https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html",
     required: ["Settlement Edge explainer", "0 submitted orders", "0 ambiguous trades", "1,000.0000"],
+    ceiling: 440,
+  },
+  {
+    path: "docs/prediction-market-software.html",
+    canonical: "https://iamaanahmad.github.io/delphi-agent/prediction-market-software.html",
+    required: ["Prediction market software guide", "Six checks before you automate", "0 submitted orders", "0.0000 TST realized P&amp;L"],
+    ceiling: 600,
   },
   {
     path: "docs/settlement-edge-vs-gnosis-prediction-market-agent.html",
@@ -221,7 +233,7 @@ for (const page of searchPages) {
   }
 }
 
-if (!index.includes("prediction-market-trading-agent-vs-forecasting-agent.html") || !index.includes("settlement-edge-prediction-market-trading-agent.html")) {
+if (!index.includes("prediction-market-trading-agent-vs-forecasting-agent.html") || !index.includes("settlement-edge-prediction-market-trading-agent.html") || !index.includes("prediction-market-software.html")) {
   throw new Error("docs/index.html is missing internal links to the search pages");
 }
 if ((index.match(/class="guide-links"/g) ?? []).length !== 1) {
@@ -248,9 +260,9 @@ for (const type of ["Organization", "SoftwareApplication"]) {
   }
 }
 
-for (const page of searchPages.slice(0, 2)) {
+for (const page of searchPages.filter((entry) => entry.ceiling)) {
   const html = await readFile(resolve(root, page.path), "utf8");
-  const ceiling = page.path.includes("vs-forecasting-agent") ? 600 : 440;
+  const ceiling = page.ceiling;
   const words = visibleMainWordCount(html);
   if (words > ceiling) {
     throw new Error(`${page.path} exceeds its ${ceiling}-word page budget: ${words}`);
@@ -277,10 +289,10 @@ for (const field of ["name", "url", "description", "applicationCategory", "opera
     throw new Error(`SoftwareApplication structured data is missing ${field}`);
   }
 }
-const searchPageUrls = searchPages.slice(0, 2).map((page) => page.canonical);
+const searchPageUrls = searchPages.filter((page) => page.ceiling).map((page) => page.canonical);
 const subjectUrls = Array.isArray(software.subjectOf) ? software.subjectOf.map((entry) => entry.url) : [];
 if (searchPageUrls.some((url) => !subjectUrls.includes(url))) {
-  throw new Error("SoftwareApplication structured data does not cover both proof-backed search pages");
+  throw new Error("SoftwareApplication structured data does not cover each proof-backed search page");
 }
 
 const publicFiles = ["docs/robots.txt", "docs/sitemap.xml", "docs/llms.txt"];
