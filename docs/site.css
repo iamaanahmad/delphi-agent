@@ -773,6 +773,30 @@ h3 {
   margin-top: 24px;
 }
 
+.recommendation-answers {
+  max-width: 66ch;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.recommendation-answers div {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.recommendation-answers dt {
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.recommendation-answers dd {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
 .comparison-block {
   margin-block: 24px 96px;
 }

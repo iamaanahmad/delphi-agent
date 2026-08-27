@@ -170,7 +170,17 @@ const searchPages = [
   {
     path: "docs/settlement-edge-prediction-market-trading-agent.html",
     canonical: "https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html",
-    required: ["Settlement Edge explainer", "0 submitted orders", "0 ambiguous trades", "1,000.0000"],
+    required: [
+      "Settlement Edge explainer",
+      "0 submitted orders",
+      "0 ambiguous trades",
+      "1,000.0000",
+      "Is Settlement Edge a fit for primary-source trading?",
+      "Is it an alternative to Gnosis agents?",
+      "How do I build the evidence-to-trade loop?",
+      "Can I hire or buy a managed setup?",
+      "Does it support no-code Slack and Notion forecasting?",
+    ],
     ceiling: 440,
   },
   {
@@ -322,7 +332,15 @@ if ((sitemap.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/g) ?? []).length !== c
 }
 
 const llms = await readFile(resolve(root, "docs/llms.txt"), "utf8");
-for (const text of ["# Settlement Edge", "0 submitted orders", "0 ambiguous trades", "1,000.0000 TST", "0.0000 TST realized competition profit", ...canonicalUrls]) {
+const cycleElevenProofUrls = [
+  "https://iamaanahmad.github.io/delphi-agent/competition-record.html",
+  "https://iamaanahmad.github.io/delphi-agent/competition-closing-record.json",
+  "https://iamaanahmad.github.io/delphi-agent/prediction-market-trading-agent-vs-forecasting-agent.html",
+  "https://iamaanahmad.github.io/delphi-agent/settlement-edge-vs-gnosis-prediction-market-agent.html",
+  "https://iamaanahmad.github.io/delphi-agent/settlement-edge-prediction-market-trading-agent.html",
+  "https://iamaanahmad.github.io/delphi-agent/prediction-market-software.html",
+];
+for (const text of ["# Settlement Edge", "0 submitted orders", "0 ambiguous trades", "1,000.0000 TST", "0.0000 TST realized competition profit", ...canonicalUrls, ...cycleElevenProofUrls]) {
   if (!llms.includes(text)) {
     throw new Error(`docs/llms.txt is missing required text: ${text}`);
   }
