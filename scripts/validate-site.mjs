@@ -124,6 +124,7 @@ for (const text of [
   'captureSiteEvent(posthog, "demo_engaged"',
   'captureSiteEvent(posthog, "site_state_encountered"',
   'captureSiteEvent(posthog, "feedback_submitted"',
+  'captureSiteEvent(posthog, "site_primary_cta_clicked"',
   "posthog.startSessionRecording(true)",
   "What were you hoping to understand about Settlement Edge?",
 ]) {
@@ -141,7 +142,9 @@ for (const text of [
   "capture_pageview: !isTest",
   "capture_pageleave: !isTest",
   'dom_event_allowlist: isTest ? [] : ["click"]',
-  "isTest ? `${TEST_EVENT_PREFIX}${eventName}` : eventName",
+  'eventName.startsWith("site_")',
+  '`settlement_edge_test_${eventName}`',
+  '`${TEST_EVENT_PREFIX}${eventName}`',
   'acquisition_channel: "ai_assistant"',
   'captureSiteEvent(posthog, `referral_${attribution.acquisition_channel}`)',
   "delete event.properties.$referrer",

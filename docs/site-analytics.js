@@ -196,8 +196,24 @@
   }
 
   function captureSiteEvent(posthog, eventName, extra) {
-    const isolatedName = isTest ? `${TEST_EVENT_PREFIX}${eventName}` : eventName;
+    const isolatedName = isTest
+      ? eventName.startsWith("site_")
+        ? `settlement_edge_test_${eventName}`
+        : `${TEST_EVENT_PREFIX}${eventName}`
+      : eventName;
     posthog.capture(isolatedName, eventProperties(extra));
+  }
+
+  function bindPrimaryAction(posthog) {
+    if (route !== "/" && !route.endsWith("/delphi-agent/")) return;
+    const primaryAction = document.querySelector("main .hero .primary-action");
+    if (!primaryAction) return;
+    primaryAction.addEventListener("click", function () {
+      captureSiteEvent(posthog, "site_primary_cta_clicked", {
+        cta: "view_open_source_agent",
+        destination: "github_repository",
+      });
+    });
   }
 
   function createFeedbackPrompt(posthog) {
@@ -277,6 +293,7 @@
       captureSiteEvent(posthog, `referral_${attribution.acquisition_channel}`);
       writeSessionValue(capturedKey, "true");
     }
+    bindPrimaryAction(posthog);
     const showFeedback = createFeedbackPrompt(posthog);
 
     const guide = route.endsWith("/prediction-market-trading-agent-vs-forecasting-agent.html")
