@@ -4,6 +4,7 @@ import { runInNewContext } from "node:vm";
 import test from "node:test";
 
 interface AnalyticsHarness {
+  bindPrimaryAction: (posthog: { capture: (name: string, properties: Record<string, unknown>) => void }) => void;
   classifyReferrer: (value: string) => { acquisition_channel: string; referral_source: string };
   captureSiteEvent: (posthog: { capture: (name: string, properties: Record<string, unknown>) => void }, eventName: string, extra?: Record<string, unknown>) => void;
   loadPostHog: () => void;
@@ -23,7 +24,7 @@ async function loadHarness(search: string, referrer = ""): Promise<AnalyticsHarn
   const source = await readFile(new URL("../docs/site-analytics.js", import.meta.url), "utf8");
   const exposed = source.replace(
     "  loadPostHog();\n})();",
-    "  globalThis.__analyticsHarness = { classifyReferrer, captureSiteEvent, loadPostHog, sanitizeEvent, window };\n})();",
+    "  globalThis.__analyticsHarness = { bindPrimaryAction, classifyReferrer, captureSiteEvent, loadPostHog, sanitizeEvent, window };\n})();",
   );
   assert.notEqual(exposed, source, "analytics harness hook must match the production loader");
 
@@ -43,10 +44,17 @@ async function loadHarness(search: string, referrer = ""): Promise<AnalyticsHarn
       },
     },
   };
+  const primaryActionListeners = new Map<string, () => void>();
   const document = {
     referrer,
     createElement: () => ({}),
     getElementsByTagName: () => [{ parentNode: { insertBefore: () => undefined } }],
+    querySelector: (selector: string) =>
+      selector === "main .hero .primary-action"
+        ? {
+            addEventListener: (name: string, listener: () => void) => primaryActionListeners.set(name, listener),
+          }
+        : null,
   };
   const context = {
     URL,
@@ -57,8 +65,32 @@ async function loadHarness(search: string, referrer = ""): Promise<AnalyticsHarn
   };
   context.globalThis = context;
   runInNewContext(exposed, context);
-  return (context as typeof context & { __analyticsHarness: AnalyticsHarness }).__analyticsHarness;
+  const harness = (context as typeof context & { __analyticsHarness: AnalyticsHarness }).__analyticsHarness;
+  return Object.assign(harness, { primaryActionListeners });
 }
+
+test("homepage primary action emits one explicit outcome event with bounded properties", async () => {
+  const harness = (await loadHarness("?analytics_test=true&analytics_test_source=chatgpt")) as AnalyticsHarness & {
+    primaryActionListeners: Map<string, () => void>;
+  };
+  const captured: Array<{ name: string; properties: Record<string, unknown> }> = [];
+  harness.bindPrimaryAction({ capture: (name, properties) => captured.push({ name, properties }) });
+  harness.primaryActionListeners.get("click")?.();
+
+  assert.deepEqual(normalize(captured), [
+    {
+      name: "settlement_edge_test_site_primary_cta_clicked",
+      properties: {
+        route: "/delphi-agent/",
+        is_test: true,
+        acquisition_channel: "ai_assistant",
+        referral_source: "chatgpt",
+        cta: "view_open_source_agent",
+        destination: "github_repository",
+      },
+    },
+  ]);
+});
 
 test("marked site analytics use an isolated event namespace and disable automatic live events", async () => {
   const harness = await loadHarness("?analytics_test=true&analytics_test_source=chatgpt");
